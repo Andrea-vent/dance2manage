@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <title>Ricevuta {{ ricevuta_numero }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #333;
+            padding-bottom: 15px;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+        }
+        
+        .header h2 {
+            color: #666;
+            margin: 0;
+            font-size: 18px;
+            font-weight: normal;
+        }
+        
+        .ricevuta-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .ricevuta-numero {
+            text-align: right;
+        }
+        
+        .ricevuta-numero h3 {
+            color: #333;
+            font-size: 16px;
+            margin: 0;
+        }
+        
+        .cliente-info {
+            margin-bottom: 30px;
+        }
+        
+        .cliente-info h4 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 5px;
+        }
+        
+        .dettagli {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .dettagli th,
+        .dettagli td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        
+        .dettagli th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .dettagli .importo {
+            text-align: right;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .totale {
+            text-align: right;
+            margin-bottom: 30px;
+        }
+        
+        .totale-box {
+            display: inline-block;
+            border: 2px solid #333;
+            padding: 15px 20px;
+            background-color: #f9f9f9;
+        }
+        
+        .totale h3 {
+            margin: 0;
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .footer {
+            margin-top: 50px;
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+            text-align: center;
+            color: #666;
+            font-size: 10px;
+        }
+        
+        .note {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #333;
+        }
+        
+        .note h5 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 15px;
+            }
+            
+            .footer {
+                position: fixed;
+                bottom: 0;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>{{ settings.denominazione_sociale if settings else 'Dance2Manage' }}</h1>
+        <h2>Ricevuta di Pagamento</h2>
+        {% if settings and settings.indirizzo_completo %}
+        <p style="margin: 5px 0; font-size: 14px;">{{ settings.indirizzo_completo }}</p>
+        {% endif %}
+        {% if settings %}
+        <p style="margin: 5px 0; font-size: 12px;">
+            {% if settings.partita_iva %}P.IVA: {{ settings.partita_iva }} {% endif %}
+            {% if settings.codice_fiscale %}C.F.: {{ settings.codice_fiscale }}{% endif %}
+            {% if settings.telefono %} - Tel: {{ settings.telefono }}{% endif %}
+        </p>
+        {% endif %}
+    </div>
+
+    <!-- Informazioni ricevuta e data -->
+    <div class="ricevuta-info">
+        <div class="data-emissione">
+            <strong>Data emissione:</strong> {{ data_emissione.strftime('%d/%m/%Y') }}
+        </div>
+        <div class="ricevuta-numero">
+            <h3>Ricevuta N° {{ ricevuta_numero }}</h3>
+        </div>
+    </div>
+
+    <!-- Informazioni cliente -->
+    <div class="cliente-info">
+        <h4>Dati Cliente</h4>
+        <p><strong>Nome:</strong> {{ pagamento.cliente.nome_completo }}</p>
+        {% if pagamento.cliente.codice_fiscale %}
+        <p><strong>Codice Fiscale:</strong> {{ pagamento.cliente.codice_fiscale }}</p>
+        {% endif %}
+        {% if pagamento.cliente.telefono %}
+        <p><strong>Telefono:</strong> {{ pagamento.cliente.telefono }}</p>
+        {% endif %}
+        {% if pagamento.cliente.email %}
+        <p><strong>Email:</strong> {{ pagamento.cliente.email }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Dettagli pagamento -->
+    <table class="dettagli">
+        <thead>
+            <tr>
+                <th>Descrizione</th>
+                <th>Periodo</th>
+                <th>Corso</th>
+                <th class="importo">Importo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Quota mensile corso di danza</td>
+                <td>{{ pagamento.periodo }}</td>
+                <td>{{ pagamento.corso.nome }}</td>
+                <td class="importo">€ {{ "%.2f"|format(pagamento.importo) }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Totale -->
+    <div class="totale">
+        <div class="totale-box">
+            <h3>Totale: € {{ "%.2f"|format(pagamento.importo) }}</h3>
+        </div>
+    </div>
+
+    <!-- Informazioni pagamento -->
+    <div style="margin-bottom: 20px;">
+        <p><strong>Metodo di pagamento:</strong> Contanti</p>
+        <p><strong>Data pagamento:</strong> {{ pagamento.data_pagamento.strftime('%d/%m/%Y') if pagamento.data_pagamento else 'N/A' }}</p>
+        <p><strong>Stato:</strong> {% if pagamento.pagato %}✓ Pagato{% else %}⚠ Non pagato{% endif %}</p>
+    </div>
+
+    <!-- Note aggiuntive -->
+    {% if pagamento.note %}
+    <div class="note">
+        <h5>Note:</h5>
+        <p>{{ pagamento.note }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Questa ricevuta è stata generata automaticamente da Dance2Manage.</p>
+        <p>Ricevuta generata il {{ moment().strftime('%d/%m/%Y alle %H:%M') if moment else data_emissione.strftime('%d/%m/%Y alle %H:%M') }}</p>
+        {% if settings and settings.denominazione_sociale %}
+        <p>{{ settings.denominazione_sociale }}{% if settings.partita_iva %} - P.IVA {{ settings.partita_iva }}{% endif %}</p>
+        {% endif %}
+    </div>
+</body>
+</html>

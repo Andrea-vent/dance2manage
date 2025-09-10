@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Report Incassi - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-graph-up me-2"></i>Report Incassi e Compensi</h1>
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary" onclick="window.print()">
+                    <i class="bi bi-printer me-1"></i>Stampa
+                </button>
+                <a href="{{ url_for('genera_pdf_compensi', mese=mese_filtro, anno=anno_filtro) }}" 
+                   class="btn btn-outline-danger">
+                    <i class="bi bi-file-earmark-pdf me-1"></i>PDF Compensi
+                </a>
+                <a href="{{ url_for('esporta_report_excel', mese=mese_filtro, anno=anno_filtro) }}" 
+                   class="btn btn-success">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtri -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="mese" class="form-label">Mese</label>
+                        <select class="form-select" id="mese" name="mese">
+                            {% for i in range(1, 13) %}
+                            <option value="{{ i }}" {% if mese_filtro == i %}selected{% endif %}>
+                                {% set mesi = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'] %}
+                                {{ mesi[i] }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="anno" class="form-label">Anno</label>
+                        <select class="form-select" id="anno" name="anno">
+                            {% for anno in range(2020, 2030) %}
+                            <option value="{{ anno }}" {% if anno_filtro == anno %}selected{% endif %}>{{ anno }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search me-1"></i>Genera Report
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Riepilogo generale -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>€{{ "%.2f"|format(riepilogo.incasso_totale) }}</h4>
+                <p class="mb-0">Incasso Totale</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>€{{ "%.2f"|format(riepilogo.compensi_totali) }}</h4>
+                <p class="mb-0">Compensi Insegnanti</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>€{{ "%.2f"|format(riepilogo.utile_netto) }}</h4>
+                <p class="mb-0">Utile Netto</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ riepilogo.numero_pagamenti }}</h4>
+                <p class="mb-0">Pagamenti</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report per corso -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-week me-2"></i>
+                    Report per Corso - {{ mesi[mese_filtro] }} {{ anno_filtro }}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if report_corsi %}
+                <div class="table-responsive">
+                    <table class="table table-striped" id="reportCorsiTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Corso</th>
+                                <th>Insegnante</th>
+                                <th>Iscritti</th>
+                                <th>Pagamenti</th>
+                                <th>Incasso</th>
+                                <th>% Insegnante</th>
+                                <th>Compenso</th>
+                                <th>Utile Corso</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in report_corsi %}
+                            <tr>
+                                <td>
+                                    <strong>{{ report.corso.nome }}</strong><br>
+                                    <small class="text-muted">{{ report.corso.giorno }} {{ report.corso.orario.strftime('%H:%M') }}</small>
+                                </td>
+                                <td>{{ report.insegnante.nome_completo }}</td>
+                                <td>{{ report.corso.numero_iscritti }}</td>
+                                <td>{{ report.numero_pagamenti }}/{{ report.corso.numero_iscritti }}</td>
+                                <td><strong>€{{ "%.2f"|format(report.incasso_corso) }}</strong></td>
+                                <td>{{ "%.1f"|format(report.percentuale_insegnante) }}%</td>
+                                <td class="text-success">€{{ "%.2f"|format(report.compenso_insegnante) }}</td>
+                                <td class="text-primary">€{{ "%.2f"|format(report.utile_corso) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-secondary">
+                            <tr>
+                                <th colspan="4">TOTALI</th>
+                                <th>€{{ "%.2f"|format(riepilogo.incasso_totale) }}</th>
+                                <th>-</th>
+                                <th class="text-success">€{{ "%.2f"|format(riepilogo.compensi_totali) }}</th>
+                                <th class="text-primary">€{{ "%.2f"|format(riepilogo.utile_netto) }}</th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-graph-up text-muted" style="font-size: 3rem;"></i>
+                    <h4 class="text-muted mt-3">Nessun dato per il periodo selezionato</h4>
+                    <p class="text-muted">Seleziona un mese/anno diverso o verifica che ci siano pagamenti registrati.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Report per insegnante -->
+{% if report_insegnanti %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>
+                    Compensi per Insegnante - {{ mesi[mese_filtro] }} {{ anno_filtro }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped" id="reportInsegnantiTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Insegnante</th>
+                                <th>Corsi</th>
+                                <th>Incasso dai Corsi</th>
+                                <th>% Media</th>
+                                <th>Compenso Totale</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for report in report_insegnanti %}
+                            <tr>
+                                <td>
+                                    <strong>{{ report.insegnante.nome_completo }}</strong><br>
+                                    {% if report.insegnante.telefono %}
+                                        <small class="text-muted">{{ report.insegnante.telefono }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% for corso_nome in report.corsi_nomi %}
+                                        <span class="badge bg-light text-dark me-1 mb-1">{{ corso_nome }}</span>
+                                    {% endfor %}
+                                </td>
+                                <td>€{{ "%.2f"|format(report.incasso_totale) }}</td>
+                                <td>{{ "%.1f"|format(report.percentuale_media) }}%</td>
+                                <td class="text-success"><strong>€{{ "%.2f"|format(report.compenso_totale) }}</strong></td>
+                                <td>
+                                    <a href="{{ url_for('genera_pdf_compensi_insegnante', insegnante_id=report.insegnante.id, mese=mese_filtro, anno=anno_filtro) }}" 
+                                       class="btn btn-sm btn-outline-danger" title="PDF Compenso">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Info stampa -->
+<div class="d-print-block d-none mt-4 text-center">
+    <hr>
+    <small class="text-muted">
+        Report generato il {{ moment().strftime('%d/%m/%Y alle %H:%M') if moment else '' }} - {{ settings.denominazione_sociale }}
+    </small>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Inizializza DataTables
+$(document).ready(function() {
+    // Tabella report corsi
+    $('#reportCorsiTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/Italian.json"
+        },
+        "pageLength": 25,
+        "order": [[ 4, "desc" ]],  // Ordina per incasso decrescente
+        "columnDefs": [
+            { "targets": [4, 6, 7], "type": "num-fmt" }  // Colonne numeriche
+        ]
+    });
+    
+    // Tabella report insegnanti
+    $('#reportInsegnantiTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.7/i18n/Italian.json"
+        },
+        "pageLength": 25,
+        "order": [[ 4, "desc" ]],  // Ordina per compenso decrescente
+        "columnDefs": [
+            { "targets": [2, 4], "type": "num-fmt" },  // Colonne numeriche
+            { "targets": [5], "orderable": false }  // Colonna azioni non ordinabile
+        ]
+    });
+});
+
+// Funzione per stampare solo la sezione report
+function stampaReport() {
+    window.print();
+}
+
+// Stili per la stampa
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @media print {
+            .btn, .navbar, .card-header, .alert, .dataTables_wrapper .dataTables_filter, .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_info, .dataTables_wrapper .dataTables_paginate { display: none !important; }
+            .card { border: none !important; box-shadow: none !important; }
+            .card-body { padding: 0 !important; }
+            .table { font-size: 0.9em; }
+            .d-print-block { display: block !important; }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

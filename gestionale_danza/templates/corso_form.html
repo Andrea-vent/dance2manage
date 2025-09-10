@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}{% if corso %}Modifica{% else %}Nuovo{% endif %} Corso - Gestionale Scuola di Danza{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-calendar-{% if corso %}gear{% else %}plus{% endif %} me-2"></i>
+                    {% if corso %}Modifica Corso{% else %}Nuovo Corso{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="nome" class="form-label">Nome del corso *</label>
+                        <input type="text" class="form-control" id="nome" name="nome" 
+                               value="{{ corso.nome if corso else '' }}" 
+                               placeholder="es. Danza Classica Principianti" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="giorno" class="form-label">Giorno della settimana *</label>
+                            <select class="form-select" id="giorno" name="giorno" required>
+                                <option value="">Seleziona giorno...</option>
+                                <option value="Lunedì" {% if corso and corso.giorno == 'Lunedì' %}selected{% endif %}>Lunedì</option>
+                                <option value="Martedì" {% if corso and corso.giorno == 'Martedì' %}selected{% endif %}>Martedì</option>
+                                <option value="Mercoledì" {% if corso and corso.giorno == 'Mercoledì' %}selected{% endif %}>Mercoledì</option>
+                                <option value="Giovedì" {% if corso and corso.giorno == 'Giovedì' %}selected{% endif %}>Giovedì</option>
+                                <option value="Venerdì" {% if corso and corso.giorno == 'Venerdì' %}selected{% endif %}>Venerdì</option>
+                                <option value="Sabato" {% if corso and corso.giorno == 'Sabato' %}selected{% endif %}>Sabato</option>
+                                <option value="Domenica" {% if corso and corso.giorno == 'Domenica' %}selected{% endif %}>Domenica</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="orario" class="form-label">Orario *</label>
+                            <input type="time" class="form-control" id="orario" name="orario" 
+                                   value="{{ corso.orario.strftime('%H:%M') if corso else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="insegnante_id" class="form-label">Insegnante *</label>
+                            <select class="form-select" id="insegnante_id" name="insegnante_id" required>
+                                <option value="">Seleziona insegnante...</option>
+                                {% for insegnante in insegnanti %}
+                                <option value="{{ insegnante.id }}" 
+                                        {% if corso and corso.insegnante_id == insegnante.id %}selected{% endif %}>
+                                    {{ insegnante.nome_completo }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if not insegnanti %}
+                            <div class="form-text text-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Nessun insegnante disponibile. 
+                                <a href="{{ url_for('nuovo_insegnante') }}">Crea un insegnante</a> prima di continuare.
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="max_iscritti" class="form-label">Numero massimo iscritti</label>
+                            <input type="number" class="form-control" id="max_iscritti" name="max_iscritti" 
+                                   value="{{ corso.max_iscritti if corso else 20 }}" 
+                                   min="1" max="50">
+                            <div class="form-text">Numero massimo di allievi per il corso</div>
+                        </div>
+                    </div>
+
+                    {% if corso and corso.clienti %}
+                    <div class="mb-3">
+                        <label class="form-label">Iscritti attuali ({{ corso.numero_iscritti }})</label>
+                        <div class="border rounded p-3 bg-light">
+                            {% for cliente in corso.clienti %}
+                                <span class="badge bg-primary me-1 mb-1">{{ cliente.nome_completo }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('corsi') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Indietro
+                        </a>
+                        <button type="submit" class="btn btn-primary" {% if not insegnanti %}disabled{% endif %}>
+                            <i class="bi bi-save me-1"></i>
+                            {% if corso %}Aggiorna{% else %}Crea{% endif %} Corso
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

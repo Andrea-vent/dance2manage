@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Insegnanti - Gestionale Scuola di Danza{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-badge me-2"></i>Insegnanti</h1>
+            <a href="{{ url_for('nuovo_insegnante') }}" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>Nuovo Insegnante
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Lista insegnanti -->
+<div class="row">
+    {% if insegnanti %}
+        {% for insegnante in insegnanti %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ insegnante.nome_completo }}</h5>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{ url_for('modifica_insegnante', id=insegnante.id) }}" 
+                           class="btn btn-outline-primary" title="Modifica">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" 
+                                onclick="confermaEliminazione('{{ insegnante.nome_completo }}', '{{ url_for('elimina_insegnante', id=insegnante.id) }}')"
+                                title="Elimina">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if insegnante.telefono %}
+                    <div class="mb-2">
+                        <i class="bi bi-telephone text-primary me-2"></i>
+                        {{ insegnante.telefono }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if insegnante.email %}
+                    <div class="mb-3">
+                        <i class="bi bi-envelope text-success me-2"></i>
+                        <a href="mailto:{{ insegnante.email }}" class="text-decoration-none">
+                            {{ insegnante.email }}
+                        </a>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-2">
+                        <i class="bi bi-calendar-week text-info me-2"></i>
+                        <strong>{{ insegnante.numero_corsi }}</strong> 
+                        {{ 'corso' if insegnante.numero_corsi == 1 else 'corsi' }}
+                    </div>
+
+                    {% if insegnante.corsi %}
+                    <div class="mb-0">
+                        <small class="text-muted">Corsi:</small>
+                        <div class="mt-1">
+                            {% for corso in insegnante.corsi %}
+                                <span class="badge bg-light text-dark me-1 mb-1">
+                                    {{ corso.nome }}
+                                    <small>({{ corso.giorno }} {{ corso.orario.strftime('%H:%M') }})</small>
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="text-muted">
+                        <small>Nessun corso assegnato</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-person-badge text-muted" style="font-size: 4rem;"></i>
+            <h3 class="text-muted mt-3">Nessun insegnante disponibile</h3>
+            <p class="text-muted">Inizia aggiungendo il primo insegnante</p>
+            <a href="{{ url_for('nuovo_insegnante') }}" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>Aggiungi Insegnante
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if insegnanti %}
+<div class="row mt-4">
+    <div class="col-12">
+        <small class="text-muted">Totale insegnanti: {{ insegnanti|length }}</small>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal di conferma eliminazione -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Conferma Eliminazione</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sei sicuro di voler eliminare l'insegnante <strong id="insegnanteNome"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Attenzione:</strong> Questa azione eliminerà anche tutti i corsi assegnati 
+                    a questo insegnante e i relativi pagamenti.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Elimina
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confermaEliminazione(nomeInsegnante, url) {
+    document.getElementById('insegnanteNome').textContent = nomeInsegnante;
+    document.getElementById('deleteForm').action = url;
+    new bootstrap.Modal(document.getElementById('confirmDeleteModal')).show();
+}
+</script>
+{% endblock %}

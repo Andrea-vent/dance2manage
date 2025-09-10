@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="bi bi-house-door me-2"></i>Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Statistiche principali -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_clienti }}</h4>
+                        <p class="mb-0">Clienti Attivi</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-people" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-primary bg-opacity-75">
+                <a href="{{ url_for('clienti') }}" class="text-white text-decoration-none">
+                    <small>Visualizza <i class="bi bi-arrow-right"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_corsi }}</h4>
+                        <p class="mb-0">Corsi Attivi</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-calendar-week" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-success bg-opacity-75">
+                <a href="{{ url_for('corsi') }}" class="text-white text-decoration-none">
+                    <small>Visualizza <i class="bi bi-arrow-right"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_insegnanti }}</h4>
+                        <p class="mb-0">Insegnanti</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-person-badge" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-info bg-opacity-75">
+                <a href="{{ url_for('insegnanti') }}" class="text-white text-decoration-none">
+                    <small>Visualizza <i class="bi bi-arrow-right"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>€{{ "%.2f"|format(incasso_mese) }}</h4>
+                        <p class="mb-0">Incassi Mese</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="bi bi-cash-coin" style="font-size: 2rem;"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer bg-warning bg-opacity-75">
+                <a href="{{ url_for('pagamenti') }}" class="text-white text-decoration-none">
+                    <small>Visualizza <i class="bi bi-arrow-right"></i></small>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Riepilogo pagamenti mese corrente -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    Pagamenti {{ mese_corrente }}/{{ anno_corrente }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h3 class="text-success">€{{ "%.2f"|format(incasso_mese) }}</h3>
+                        <p class="text-muted mb-0">Incassato</p>
+                    </div>
+                    <div class="col-6">
+                        <h3 class="text-danger">€{{ "%.2f"|format(debiti_mese) }}</h3>
+                        <p class="text-muted mb-0">Da incassare</p>
+                    </div>
+                </div>
+                
+                {% if debiti_mese > 0 %}
+                <div class="alert alert-warning mt-3">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Attenzione:</strong> Ci sono pagamenti in sospeso per questo mese.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="bi bi-tools me-2"></i>
+                    Azioni Rapide
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('nuovo_cliente') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-person-plus me-1"></i>
+                        Nuovo Cliente
+                    </a>
+                    <a href="{{ url_for('nuovo_corso') }}" class="btn btn-outline-success">
+                        <i class="bi bi-calendar-plus me-1"></i>
+                        Nuovo Corso
+                    </a>
+                    <a href="{{ url_for('nuovo_pagamento') }}" class="btn btn-outline-warning">
+                        <i class="bi bi-credit-card me-1"></i>
+                        Nuovo Pagamento
+                    </a>
+                    <a href="{{ url_for('backup_database') }}" class="btn btn-outline-info">
+                        <i class="bi bi-download me-1"></i>
+                        Backup Database
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Benvenuto -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <h4 class="alert-heading">
+                <i class="bi bi-info-circle me-2"></i>Benvenuto in Dance2Manage!
+            </h4>
+            <p>
+                Questo è il pannello di controllo principale. Da qui puoi accedere rapidamente 
+                a tutte le funzionalità del sistema di gestione della tua scuola di danza.
+            </p>
+            <hr>
+            <ul class="mb-0">
+                <li><strong>Clienti:</strong> Gestisci l'anagrafica degli allievi</li>
+                <li><strong>Corsi:</strong> Organizza orari e insegnanti</li>
+                <li><strong>Pagamenti:</strong> Traccia mensilità e genera ricevute</li>
+                <li><strong>Backup:</strong> Esporta i tuoi dati di sicurezza</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

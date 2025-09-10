@@ -1,0 +1,573 @@
+{% extends "base.html" %}
+
+{% block title %}Guida all'uso - Dance2Manager{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <!-- Sidebar Navigation -->
+            <div class="card sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-book me-2"></i>Indice</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        <a href="#introduzione" class="list-group-item list-group-item-action">
+                            <i class="bi bi-info-circle me-2"></i>Introduzione
+                        </a>
+                        <a href="#primo-accesso" class="list-group-item list-group-item-action">
+                            <i class="bi bi-play-circle me-2"></i>Primo Accesso
+                        </a>
+                        <a href="#clienti" class="list-group-item list-group-item-action">
+                            <i class="bi bi-people me-2"></i>Gestione Clienti
+                        </a>
+                        <a href="#insegnanti" class="list-group-item list-group-item-action">
+                            <i class="bi bi-person-badge me-2"></i>Gestione Insegnanti
+                        </a>
+                        <a href="#corsi" class="list-group-item list-group-item-action">
+                            <i class="bi bi-calendar-week me-2"></i>Gestione Corsi
+                        </a>
+                        <a href="#pagamenti" class="list-group-item list-group-item-action">
+                            <i class="bi bi-credit-card me-2"></i>Gestione Pagamenti
+                        </a>
+                        <a href="#report" class="list-group-item list-group-item-action">
+                            <i class="bi bi-graph-up me-2"></i>Report e Statistiche
+                        </a>
+                        <a href="#impostazioni" class="list-group-item list-group-item-action">
+                            <i class="bi bi-gear me-2"></i>Impostazioni
+                        </a>
+                        <a href="#backup" class="list-group-item list-group-item-action">
+                            <i class="bi bi-shield-check me-2"></i>Backup
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1><i class="bi bi-question-circle me-2"></i>Guida all'uso di Dance2Manager</h1>
+                <button onclick="window.print()" class="btn btn-outline-primary">
+                    <i class="bi bi-printer me-1"></i>Stampa Guida
+                </button>
+            </div>
+
+            <!-- Introduzione -->
+            <section id="introduzione" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="mb-0"><i class="bi bi-info-circle me-2"></i>Introduzione</h3>
+                    </div>
+                    <div class="card-body">
+                        <p class="lead">Dance2Manager è un software gestionale completo per scuole di danza.</p>
+                        
+                        <h5>Funzionalità Principali:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Gestione completa clienti</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Organizzazione corsi e orari</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Tracciamento pagamenti</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Ricevute PDF automatiche</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Calcolo compensi insegnanti</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Report finanziari dettagliati</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Gestione dati aziendali</li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i>Software portatile (no installazione)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Primo Accesso:</strong> Username: <code>admin</code>, Password: <code>admin123</code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Primo Accesso -->
+            <section id="primo-accesso" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="mb-0"><i class="bi bi-play-circle me-2"></i>Primo Accesso</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>1. Configurazione Dati Azienda</h5>
+                                <p>Prima di iniziare, configurare i dati della scuola:</p>
+                                <ol>
+                                    <li>Menu utente → <strong>Impostazioni Azienda</strong></li>
+                                    <li>Inserire denominazione sociale</li>
+                                    <li>Compilare indirizzo e contatti</li>
+                                    <li>Inserire P.IVA e Codice Fiscale</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>2. Dati di Prova</h5>
+                                <p>Per testare il sistema con dati di esempio:</p>
+                                <div class="bg-light p-3 rounded">
+                                    <code>cd gestionale_danza<br>python seeder.py --reset</code>
+                                </div>
+                                <small class="text-muted">Crea clienti, corsi e pagamenti di esempio</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestione Clienti -->
+            <section id="clienti" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0"><i class="bi bi-people me-2"></i>Gestione Clienti</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Aggiungere Cliente</h5>
+                                <ol>
+                                    <li><strong>Clienti</strong> → <strong>Nuovo Cliente</strong></li>
+                                    <li>Compilare dati anagrafici</li>
+                                    <li><strong>Importante:</strong> Codice Fiscale (per ricevute)</li>
+                                    <li>Inserire contatti</li>
+                                </ol>
+                                
+                                <h5 class="mt-4">Iscrizione a Corso</h5>
+                                <ol>
+                                    <li>Aprire scheda cliente</li>
+                                    <li>Sezione <strong>Iscrizioni</strong></li>
+                                    <li><strong>Iscriviti a Corso</strong></li>
+                                    <li>Sistema crea pagamenti automaticamente</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-lightbulb me-2"></i>Suggerimenti</h6>
+                                    <ul class="mb-0">
+                                        <li>Codice Fiscale importante per ricevute fiscali</li>
+                                        <li>Email necessaria per comunicazioni</li>
+                                        <li>Telefono per contatti urgenti</li>
+                                        <li>Data nascita per statistiche età</li>
+                                    </ul>
+                                </div>
+                                
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Attenzione:</strong> Eliminare cliente cancella anche tutti i pagamenti associati.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestione Insegnanti -->
+            <section id="insegnanti" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h3 class="mb-0"><i class="bi bi-person-badge me-2"></i>Gestione Insegnanti</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Aggiungere Insegnante</h5>
+                                <ol>
+                                    <li><strong>Insegnanti</strong> → <strong>Nuovo Insegnante</strong></li>
+                                    <li>Compilare dati anagrafici</li>
+                                    <li><strong>Cruciale:</strong> Impostare percentuale guadagno</li>
+                                    <li>Inserire contatti e specializzazioni</li>
+                                </ol>
+
+                                <div class="alert alert-success mt-3">
+                                    <h6><i class="bi bi-calculator me-2"></i>Esempio Calcolo</h6>
+                                    <ul class="mb-0">
+                                        <li>Corso incassa: €1.000</li>
+                                        <li>Insegnante al 30%: €300</li>
+                                        <li>Scuola trattiene: €700</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Percentuale Guadagno</h5>
+                                <p>La percentuale determina il compenso dell'insegnante:</p>
+                                <ul>
+                                    <li><strong>30%</strong> = inserire <code>30</code></li>
+                                    <li><strong>25%</strong> = inserire <code>25</code></li>
+                                    <li><strong>40%</strong> = inserire <code>40</code></li>
+                                </ul>
+                                
+                                <div class="bg-light p-3 rounded mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        La percentuale si applica solo ai pagamenti effettivamente ricevuti
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestione Corsi -->
+            <section id="corsi" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h3 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Gestione Corsi</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Creare Nuovo Corso</h5>
+                                <ol>
+                                    <li><strong>Corsi</strong> → <strong>Nuovo Corso</strong></li>
+                                    <li>Nome corso descrittivo</li>
+                                    <li>Selezionare giorno settimana</li>
+                                    <li>Orario (formato 24h: 18:30)</li>
+                                    <li>Prezzo mensile</li>
+                                    <li>Assegnare insegnante</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Corsi con Orari Multipli</h5>
+                                <p><strong>Per lo stesso tipo di danza in orari diversi, creare corsi separati:</strong></p>
+                                
+                                <div class="bg-light p-3 rounded">
+                                    <ul class="mb-0">
+                                        <li>"Danza Classica - Lunedì 18:00"</li>
+                                        <li>"Danza Classica - Mercoledì 19:00"</li>
+                                        <li>"Danza Classica - Sabato 10:00"</li>
+                                    </ul>
+                                </div>
+                                
+                                <small class="text-muted mt-2 d-block">
+                                    Ogni orario gestisce separatamente iscrizioni, pagamenti e compensi.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gestione Pagamenti -->
+            <section id="pagamenti" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h3 class="mb-0"><i class="bi bi-credit-card me-2"></i>Gestione Pagamenti</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Registrare Pagamento</h5>
+                                <ol>
+                                    <li><strong>Pagamenti</strong> dalla navbar</li>
+                                    <li>Trovare pagamento "Non Pagato"</li>
+                                    <li><strong>Segna come Pagato</strong></li>
+                                    <li>Sistema aggiorna automaticamente</li>
+                                </ol>
+
+                                <h5 class="mt-4">Ricevute PDF</h5>
+                                <ul>
+                                    <li>Cliccare <strong>Ricevuta PDF</strong></li>
+                                    <li>Include dati azienda automaticamente</li>
+                                    <li>Mostra Codice Fiscale cliente</li>
+                                    <li>Numerazione progressiva</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Filtri Disponibili</h5>
+                                <ul>
+                                    <li><strong>Per periodo:</strong> Mese/Anno</li>
+                                    <li><strong>Per stato:</strong> Pagati/Non pagati</li>
+                                    <li><strong>Per cliente:</strong> Nome cognome</li>
+                                    <li><strong>Per corso:</strong> Nome corso</li>
+                                </ul>
+
+                                <div class="alert alert-info mt-3">
+                                    <i class="bi bi-lightbulb me-2"></i>
+                                    <strong>Suggerimento:</strong> Usare i filtri per trovare rapidamente pagamenti scaduti o da riscuotere.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Report -->
+            <section id="report" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">
+                        <h3 class="mb-0"><i class="bi bi-graph-up me-2"></i>Report e Statistiche</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h5>Report Generale</h5>
+                                <ul>
+                                    <li><strong>Incasso Totale:</strong> Tutti i pagamenti</li>
+                                    <li><strong>Compensi Insegnanti:</strong> Da pagare</li>
+                                    <li><strong>Utile Netto:</strong> Guadagno scuola</li>
+                                    <li><strong>Numero Pagamenti:</strong> Quantità</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h5>Report per Corso</h5>
+                                <ul>
+                                    <li>Incasso specifico corso</li>
+                                    <li>Iscritti vs paganti</li>
+                                    <li>Compenso insegnante</li>
+                                    <li>Utile corso</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-4">
+                                <h5>Report per Insegnante</h5>
+                                <ul>
+                                    <li>Lista corsi assegnati</li>
+                                    <li>Incasso totale</li>
+                                    <li>Percentuale media</li>
+                                    <li>Compenso da ricevere</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <hr>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Come Generare Report</h5>
+                                <ol>
+                                    <li><strong>Report</strong> dalla navbar</li>
+                                    <li>Selezionare mese e anno</li>
+                                    <li><strong>Genera Report</strong></li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Esportazione</h5>
+                                <ul>
+                                    <li><strong>Stampa:</strong> Versione stampabile</li>
+                                    <li><strong>Excel:</strong> Foglio di calcolo</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Impostazioni -->
+            <section id="impostazioni" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-secondary text-white">
+                        <h3 class="mb-0"><i class="bi bi-gear me-2"></i>Impostazioni Azienda</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Dati Obbligatori</h5>
+                                <ul>
+                                    <li><strong>Denominazione Sociale:</strong> Nome ufficiale</li>
+                                    <li>Appare su tutte le ricevute</li>
+                                </ul>
+
+                                <h5 class="mt-4">Dati Opzionali</h5>
+                                <ul>
+                                    <li>Indirizzo completo</li>
+                                    <li>Partita IVA (11 cifre)</li>
+                                    <li>Codice Fiscale (16 caratteri)</li>
+                                    <li>Contatti (telefono, email, web)</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="alert alert-success">
+                                    <h6><i class="bi bi-eye me-2"></i>Anteprima Dati</h6>
+                                    <p class="mb-0">La sezione "Anteprima" mostra come appariranno i dati nelle ricevute PDF.</p>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Importante:</strong> Questi dati appaiono su tutte le ricevute generate dal sistema.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Backup -->
+            <section id="backup" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h3 class="mb-0"><i class="bi bi-shield-check me-2"></i>Backup e Sicurezza</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Backup Automatico</h5>
+                                <ol>
+                                    <li>Menu utente → <strong>Backup Database</strong></li>
+                                    <li>File scaricato: <code>backup_YYYYMMDD_HHMMSS.db</code></li>
+                                    <li>Conservare in luogo sicuro</li>
+                                </ol>
+
+                                <h5 class="mt-4">Backup Manuale</h5>
+                                <p>Copiare il file: <code>gestionale_danza/database.db</code></p>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Ripristino</h5>
+                                <ol>
+                                    <li>Fermare l'applicazione</li>
+                                    <li>Sostituire <code>database.db</code></li>
+                                    <li>Riavviare applicazione</li>
+                                </ol>
+
+                                <div class="alert alert-danger mt-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Sicurezza:</strong>
+                                    <ul class="mb-0">
+                                        <li>Cambiare password predefinita</li>
+                                        <li>Non condividere credenziali</li>
+                                        <li>Backup regolari essenziali</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ -->
+            <section id="faq" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h3 class="mb-0"><i class="bi bi-question-circle me-2"></i>Domande Frequenti</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="accordion" id="faqAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                        Il software funziona offline?
+                                    </button>
+                                </h2>
+                                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Sì, completamente offline. Richiede solo Python installato sul computer.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                        Posso usarlo su più computer?
+                                    </button>
+                                </h2>
+                                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Sì, copiando l'intera cartella sulla chiavetta USB e avviando da lì.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                        Quanti clienti può gestire?
+                                    </button>
+                                </h2>
+                                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Praticamente illimitati. Dipende solo dallo spazio di archiviazione disponibile.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
+                                        Come personalizzo le ricevute?
+                                    </button>
+                                </h2>
+                                <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Modificando il template <code>templates/ricevuta.html</code>. Richiede conoscenze HTML/CSS di base.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Footer Guida -->
+            <div class="text-center text-muted mt-5 mb-4">
+                <hr>
+                <small>
+                    <i class="bi bi-info-circle me-1"></i>
+                    Dance2Manager v1.0 - Guida aggiornata al {{ moment().strftime('%d/%m/%Y') if moment else '' }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Smooth scrolling per i link dell'indice
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        }
+    });
+});
+
+// Evidenzia la sezione attiva nell'indice
+window.addEventListener('scroll', function() {
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.list-group-item[href^="#"]');
+    
+    let current = '';
+    sections.forEach(section => {
+        const sectionTop = section.getBoundingClientRect().top;
+        if (sectionTop <= 100) {
+            current = section.getAttribute('id');
+        }
+    });
+    
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === '#' + current) {
+            link.classList.add('active');
+        }
+    });
+});
+
+// Stili per la stampa
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        @media print {
+            .navbar, .btn, .sticky-top { display: none !important; }
+            .col-md-3 { display: none !important; }
+            .col-md-9 { flex: 0 0 100%; max-width: 100%; }
+            .card { border: 1px solid #ddd; page-break-inside: avoid; }
+            .card-header { background-color: #f8f9fa !important; color: #333 !important; }
+            body { font-size: 12px; }
+        }
+    `;
+    document.head.appendChild(style);
+});
+</script>
+{% endblock %}

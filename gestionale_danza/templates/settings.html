@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Impostazioni Azienda - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-gear me-2"></i>Impostazioni Azienda</h1>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-10 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-building me-2"></i>
+                    Dati Aziendali
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="denominazione_sociale" class="form-label">Denominazione Sociale *</label>
+                            <input type="text" class="form-control" id="denominazione_sociale" 
+                                   name="denominazione_sociale" value="{{ settings.denominazione_sociale }}" required>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="partita_iva" class="form-label">Partita IVA</label>
+                            <input type="text" class="form-control" id="partita_iva" name="partita_iva" 
+                                   value="{{ settings.partita_iva or '' }}" maxlength="11" 
+                                   pattern="[0-9]{11}" placeholder="12345678901">
+                            <div class="form-text">11 cifre (solo numeri)</div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="indirizzo" class="form-label">Indirizzo</label>
+                            <input type="text" class="form-control" id="indirizzo" name="indirizzo" 
+                                   value="{{ settings.indirizzo or '' }}" placeholder="Via Roma, 123">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="cap" class="form-label">CAP</label>
+                            <input type="text" class="form-control" id="cap" name="cap" 
+                                   value="{{ settings.cap or '' }}" maxlength="5" 
+                                   pattern="[0-9]{5}" placeholder="00100">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="citta" class="form-label">Città</label>
+                            <input type="text" class="form-control" id="citta" name="citta" 
+                                   value="{{ settings.citta or '' }}" placeholder="Roma">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="provincia" class="form-label">Provincia</label>
+                            <input type="text" class="form-control" id="provincia" name="provincia" 
+                                   value="{{ settings.provincia or '' }}" maxlength="2" 
+                                   style="text-transform: uppercase;" placeholder="RM">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Telefono</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                   value="{{ settings.telefono or '' }}" placeholder="06 12345678">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ settings.email or '' }}" placeholder="info@scuoladanza.it">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="sito_web" class="form-label">Sito Web</label>
+                            <input type="url" class="form-control" id="sito_web" name="sito_web" 
+                                   value="{{ settings.sito_web or '' }}" placeholder="https://www.scuoladanza.it">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="codice_fiscale" class="form-label">Codice Fiscale</label>
+                            <input type="text" class="form-control" id="codice_fiscale" name="codice_fiscale" 
+                                   value="{{ settings.codice_fiscale or '' }}" maxlength="16" 
+                                   pattern="[A-Za-z0-9]{16}" style="text-transform: uppercase;" 
+                                   placeholder="RSSMRA80A01H501X">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="note" class="form-label">Note aggiuntive</label>
+                        <textarea class="form-control" id="note" name="note" rows="3" 
+                                  placeholder="Note aggiuntive, informazioni extra, ecc.">{{ settings.note or '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Torna alla Dashboard
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>Salva Impostazioni
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Preview dati -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-eye me-2"></i>Anteprima Dati
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>{{ settings.denominazione_sociale }}</strong><br>
+                        {% if settings.indirizzo_completo %}
+                            {{ settings.indirizzo_completo }}<br>
+                        {% endif %}
+                        {% if settings.telefono %}
+                            Tel: {{ settings.telefono }}<br>
+                        {% endif %}
+                        {% if settings.email %}
+                            Email: {{ settings.email }}<br>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if settings.partita_iva %}
+                            <strong>P.IVA:</strong> {{ settings.partita_iva }}<br>
+                        {% endif %}
+                        {% if settings.codice_fiscale %}
+                            <strong>C.F.:</strong> {{ settings.codice_fiscale }}<br>
+                        {% endif %}
+                        {% if settings.sito_web %}
+                            <strong>Web:</strong> <a href="{{ settings.sito_web }}" target="_blank">{{ settings.sito_web }}</a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if settings.note %}
+                <hr>
+                <small class="text-muted">{{ settings.note }}</small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

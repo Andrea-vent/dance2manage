@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+
+{% block title %}{% if pagamento %}Modifica{% else %}Nuovo{% endif %} Pagamento - Gestionale Scuola di Danza{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-credit-card me-2"></i>
+                    {% if pagamento %}Modifica Pagamento{% else %}Nuovo Pagamento{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="cliente_id" class="form-label">Cliente *</label>
+                            <select class="form-select" id="cliente_id" name="cliente_id" required>
+                                <option value="">Seleziona cliente...</option>
+                                {% for cliente in clienti %}
+                                <option value="{{ cliente.id }}" 
+                                        {% if pagamento and pagamento.cliente_id == cliente.id %}selected{% endif %}>
+                                    {{ cliente.nome_completo }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if not clienti %}
+                            <div class="form-text text-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Nessun cliente attivo disponibile. 
+                                <a href="{{ url_for('nuovo_cliente') }}">Crea un cliente</a> prima di continuare.
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="corso_id" class="form-label">Corso *</label>
+                            <select class="form-select" id="corso_id" name="corso_id" required>
+                                <option value="">Seleziona corso...</option>
+                                {% for corso in corsi %}
+                                <option value="{{ corso.id }}" 
+                                        {% if pagamento and pagamento.corso_id == corso.id %}selected{% endif %}>
+                                    {{ corso.nome }} ({{ corso.giorno }} {{ corso.orario.strftime('%H:%M') }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            {% if not corsi %}
+                            <div class="form-text text-warning">
+                                <i class="bi bi-exclamation-triangle me-1"></i>
+                                Nessun corso disponibile. 
+                                <a href="{{ url_for('nuovo_corso') }}">Crea un corso</a> prima di continuare.
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="mese" class="form-label">Mese *</label>
+                            <select class="form-select" id="mese" name="mese" required>
+                                {% for i in range(1, 13) %}
+                                {% set mesi = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'] %}
+                                <option value="{{ i }}" {% if (pagamento and pagamento.mese == i) or (not pagamento and i == (moment().month if moment else 1)) %}selected{% endif %}>
+                                    {{ mesi[i] }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="anno" class="form-label">Anno *</label>
+                            <select class="form-select" id="anno" name="anno" required>
+                                {% for anno in range(2020, 2030) %}
+                                <option value="{{ anno }}" {% if (pagamento and pagamento.anno == anno) or (not pagamento and anno == (moment().year if moment else 2024)) %}selected{% endif %}>
+                                    {{ anno }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="importo" class="form-label">Importo (€) *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">€</span>
+                                <input type="number" class="form-control" id="importo" name="importo" 
+                                       value="{{ pagamento.importo if pagamento else '' }}" 
+                                       step="0.01" min="0" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if pagamento %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="pagato" name="pagato" 
+                                   {% if pagamento.pagato %}checked{% endif %}>
+                            <label class="form-check-label" for="pagato">
+                                Pagamento già effettuato
+                            </label>
+                        </div>
+                        {% if pagamento.data_pagamento %}
+                        <div class="form-text">
+                            <i class="bi bi-calendar-check me-1"></i>
+                            Pagato il {{ pagamento.data_pagamento.strftime('%d/%m/%Y alle %H:%M') }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
+                        <label for="note" class="form-label">Note</label>
+                        <textarea class="form-control" id="note" name="note" rows="3" 
+                                  placeholder="Note aggiuntive (opzionale)">{{ pagamento.note if pagamento else '' }}</textarea>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('pagamenti') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Indietro
+                        </a>
+                        <button type="submit" class="btn btn-primary" {% if not clienti or not corsi %}disabled{% endif %}>
+                            <i class="bi bi-save me-1"></i>
+                            {% if pagamento %}Aggiorna{% else %}Crea{% endif %} Pagamento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if pagamento and pagamento.pagato %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-pdf me-2"></i>Ricevuta
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Il pagamento è stato effettuato. Puoi generare la ricevuta PDF.</p>
+                <a href="{{ url_for('genera_ricevuta', id=pagamento.id) }}" class="btn btn-info">
+                    <i class="bi bi-download me-1"></i>Scarica Ricevuta PDF
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+$(document).ready(function() {
+    // Inizializza Select2 per cliente e corso con ricerca
+    $('#cliente_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Cerca cliente...',
+        allowClear: true,
+        width: '100%'
+    });
+    
+    $('#corso_id').select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Cerca corso (nome, giorno, orario)...',
+        allowClear: true,
+        width: '100%',
+        matcher: function(params, data) {
+            // Se nessun termine di ricerca, mostra tutto
+            if ($.trim(params.term) === '') {
+                return data;
+            }
+            
+            // Cerca nel testo dell'opzione
+            const searchTerm = params.term.toLowerCase();
+            const optionText = data.text.toLowerCase();
+            
+            // Cerca in nome corso, giorno e orario
+            if (optionText.includes(searchTerm)) {
+                return data;
+            }
+            
+            return null;
+        }
+    });
+});
+</script>
+{% endblock %}

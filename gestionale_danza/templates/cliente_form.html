@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}{% if cliente %}Modifica{% else %}Nuovo{% endif %} Cliente - Gestionale Scuola di Danza{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="mb-0">
+                    <i class="bi bi-person-{% if cliente %}gear{% else %}plus{% endif %} me-2"></i>
+                    {% if cliente %}Modifica Cliente{% else %}Nuovo Cliente{% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nome" class="form-label">Nome *</label>
+                            <input type="text" class="form-control" id="nome" name="nome" 
+                                   value="{{ cliente.nome if cliente else '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="cognome" class="form-label">Cognome *</label>
+                            <input type="text" class="form-control" id="cognome" name="cognome" 
+                                   value="{{ cliente.cognome if cliente else '' }}" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="codice_fiscale" class="form-label">Codice Fiscale</label>
+                        <input type="text" class="form-control" id="codice_fiscale" name="codice_fiscale" 
+                               value="{{ cliente.codice_fiscale if cliente else '' }}" 
+                               maxlength="16" placeholder="RSSMRA80A01H501X" 
+                               pattern="[A-Za-z0-9]{16}" style="text-transform: uppercase;">
+                        <div class="form-text">16 caratteri alfanumerici (opzionale)</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Telefono</label>
+                            <input type="tel" class="form-control" id="telefono" name="telefono" 
+                                   value="{{ cliente.telefono if cliente else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ cliente.email if cliente else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="attivo" name="attivo" 
+                                   {% if not cliente or cliente.attivo %}checked{% endif %}>
+                            <label class="form-check-label" for="attivo">
+                                Cliente attivo
+                            </label>
+                        </div>
+                    </div>
+
+                    {% if corsi %}
+                    <div class="mb-3">
+                        <label class="form-label">Corsi frequentati</label>
+                        <div class="row">
+                            {% for corso in corsi %}
+                            <div class="col-md-6 mb-2">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="corso_{{ corso.id }}" 
+                                           name="corsi" value="{{ corso.id }}"
+                                           {% if cliente and corso in cliente.corsi %}checked{% endif %}>
+                                    <label class="form-check-label" for="corso_{{ corso.id }}">
+                                        {{ corso.nome }} 
+                                        <small class="text-muted">({{ corso.giorno }} {{ corso.orario.strftime('%H:%M') }})</small>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('clienti') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Indietro
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>
+                            {% if cliente %}Aggiorna{% else %}Crea{% endif %} Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Corsi - Gestionale Scuola di Danza{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-calendar-week me-2"></i>Corsi</h1>
+            <a href="{{ url_for('nuovo_corso') }}" class="btn btn-primary">
+                <i class="bi bi-calendar-plus me-1"></i>Nuovo Corso
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Lista corsi -->
+<div class="row">
+    {% if corsi %}
+        {% for corso in corsi %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ corso.nome }}</h5>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{{ url_for('modifica_corso', id=corso.id) }}" 
+                           class="btn btn-outline-primary" title="Modifica">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger" 
+                                onclick="confermaEliminazione('{{ corso.nome }}', '{{ url_for('elimina_corso', id=corso.id) }}')"
+                                title="Elimina">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <i class="bi bi-calendar3 text-primary me-2"></i>
+                        <strong>{{ corso.giorno }}</strong>
+                    </div>
+                    <div class="mb-2">
+                        <i class="bi bi-clock text-success me-2"></i>
+                        {{ corso.orario.strftime('%H:%M') }}
+                    </div>
+                    <div class="mb-2">
+                        <i class="bi bi-person-badge text-info me-2"></i>
+                        {{ corso.insegnante.nome_completo }}
+                    </div>
+                    <div class="mb-3">
+                        <i class="bi bi-people text-warning me-2"></i>
+                        {{ corso.numero_iscritti }}/{{ corso.max_iscritti }} iscritti
+                        <div class="progress mt-1" style="height: 5px;">
+                            <div class="progress-bar" 
+                                 style="width: {{ (corso.numero_iscritti / corso.max_iscritti * 100) if corso.max_iscritti > 0 else 0 }}%">
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if corso.clienti %}
+                    <div class="mb-0">
+                        <small class="text-muted">Iscritti:</small>
+                        <div class="mt-1">
+                            {% for cliente in corso.clienti %}
+                                <span class="badge bg-light text-dark me-1 mb-1">
+                                    {{ cliente.nome_completo }}
+                                </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    {% if corso.posti_disponibili > 0 %}
+                        <small class="text-success">
+                            <i class="bi bi-check-circle me-1"></i>
+                            {{ corso.posti_disponibili }} posti disponibili
+                        </small>
+                    {% else %}
+                        <small class="text-danger">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            Corso completo
+                        </small>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="bi bi-calendar-week text-muted" style="font-size: 4rem;"></i>
+            <h3 class="text-muted mt-3">Nessun corso disponibile</h3>
+            <p class="text-muted">Inizia creando il primo corso</p>
+            <a href="{{ url_for('nuovo_corso') }}" class="btn btn-primary">
+                <i class="bi bi-calendar-plus me-1"></i>Crea Primo Corso
+            </a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+{% if corsi %}
+<div class="row mt-4">
+    <div class="col-12">
+        <small class="text-muted">Totale corsi: {{ corsi|length }}</small>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal di conferma eliminazione -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Conferma Eliminazione</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sei sicuro di voler eliminare il corso <strong id="corsoNome"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    <strong>Attenzione:</strong> Questa azione rimuoverà il corso da tutti i clienti iscritti 
+                    e eliminerà i pagamenti associati.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <form id="deleteForm" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Elimina
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confermaEliminazione(nomeCorso, url) {
+    document.getElementById('corsoNome').textContent = nomeCorso;
+    document.getElementById('deleteForm').action = url;
+    new bootstrap.Modal(document.getElementById('confirmDeleteModal')).show();
+}
+</script>
+{% endblock %}
