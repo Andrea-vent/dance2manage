@@ -39,7 +39,11 @@
       "Read(/C:\\Users\\AndreaVentura\\Desktop\\TEST PROJECT\\Dance2Manager\\gestionale_danza\\templates/**)",
       "Read(/C:\\Users\\AndreaVentura\\Desktop\\TEST PROJECT\\Dance2Manager\\gestionale_danza\\templates/**)",
       "Read(/C:\\Users\\AndreaVentura\\Desktop\\TEST PROJECT\\Dance2Manager\\gestionale_danza\\templates/**)",
-      "Read(/C:\\Users\\AndreaVentura\\Desktop\\TEST PROJECT\\Dance2Manager\\gestionale_danza\\models/**)"
+      "Read(/C:\\Users\\AndreaVentura\\Desktop\\TEST PROJECT\\Dance2Manager\\gestionale_danza\\models/**)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

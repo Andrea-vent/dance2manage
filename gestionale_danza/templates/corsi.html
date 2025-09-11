@@ -14,79 +14,112 @@
     </div>
 </div>
 
-<!-- Lista corsi -->
+{% if corsi %}
+<!-- Tabs per giorni della settimana -->
 <div class="row">
-    {% if corsi %}
-        {% for corso in corsi %}
-        <div class="col-md-6 col-lg-4 mb-4">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">{{ corso.nome }}</h5>
-                    <div class="btn-group btn-group-sm">
-                        <a href="{{ url_for('modifica_corso', id=corso.id) }}" 
-                           class="btn btn-outline-primary" title="Modifica">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <button type="button" class="btn btn-outline-danger" 
-                                onclick="confermaEliminazione('{{ corso.nome }}', '{{ url_for('elimina_corso', id=corso.id) }}')"
-                                title="Elimina">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="mb-2">
-                        <i class="bi bi-calendar3 text-primary me-2"></i>
-                        <strong>{{ corso.giorno }}</strong>
-                    </div>
-                    <div class="mb-2">
-                        <i class="bi bi-clock text-success me-2"></i>
-                        {{ corso.orario.strftime('%H:%M') }}
-                    </div>
-                    <div class="mb-2">
-                        <i class="bi bi-person-badge text-info me-2"></i>
-                        {{ corso.insegnante.nome_completo }}
-                    </div>
-                    <div class="mb-3">
-                        <i class="bi bi-people text-warning me-2"></i>
-                        {{ corso.numero_iscritti }}/{{ corso.max_iscritti }} iscritti
-                        <div class="progress mt-1" style="height: 5px;">
-                            <div class="progress-bar" 
-                                 style="width: {{ (corso.numero_iscritti / corso.max_iscritti * 100) if corso.max_iscritti > 0 else 0 }}%">
+    <div class="col-12">
+        <ul class="nav nav-tabs" id="corsiTabs" role="tablist">
+            {% set giorni_settimana = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica'] %}
+            {% for giorno in giorni_settimana %}
+                {% set corsi_giorno = corsi|selectattr("giorno", "equalto", giorno)|list %}
+                {% if corsi_giorno %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link {% if loop.first %}active{% endif %}" 
+                            id="{{ giorno|lower }}-tab" data-bs-toggle="tab" 
+                            data-bs-target="#{{ giorno|lower }}" type="button" 
+                            role="tab" aria-controls="{{ giorno|lower }}" 
+                            aria-selected="{% if loop.first %}true{% else %}false{% endif %}">
+                        {{ giorno }} <span class="badge bg-secondary ms-1">{{ corsi_giorno|length }}</span>
+                    </button>
+                </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<!-- Contenuto tabs -->
+<div class="tab-content" id="corsiTabsContent">
+    {% for giorno in giorni_settimana %}
+        {% set corsi_giorno = corsi|selectattr("giorno", "equalto", giorno)|list|sort(attribute='orario') %}
+        {% if corsi_giorno %}
+        <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+             id="{{ giorno|lower }}" role="tabpanel" 
+             aria-labelledby="{{ giorno|lower }}-tab">
+            <div class="row mt-4">
+                {% for corso in corsi_giorno %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ corso.nome }}</h5>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('modifica_corso', id=corso.id) }}" 
+                                   class="btn btn-outline-primary" title="Modifica">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-outline-danger" 
+                                        onclick="confermaEliminazione('{{ corso.nome }}', '{{ url_for('elimina_corso', id=corso.id) }}')"
+                                        title="Elimina">
+                                    <i class="bi bi-trash"></i>
+                                </button>
                             </div>
                         </div>
-                    </div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <i class="bi bi-clock text-success me-2"></i>
+                                <strong>{{ corso.orario.strftime('%H:%M') }}</strong>
+                            </div>
+                            <div class="mb-2">
+                                <i class="bi bi-person-badge text-info me-2"></i>
+                                {{ corso.insegnante.nome_completo }}
+                            </div>
+                            <div class="mb-3">
+                                <i class="bi bi-people text-warning me-2"></i>
+                                {{ corso.numero_iscritti }}/{{ corso.max_iscritti }} iscritti
+                                <div class="progress mt-1" style="height: 5px;">
+                                    <div class="progress-bar" 
+                                         style="width: {{ (corso.numero_iscritti / corso.max_iscritti * 100) if corso.max_iscritti > 0 else 0 }}%">
+                                    </div>
+                                </div>
+                            </div>
 
-                    {% if corso.clienti %}
-                    <div class="mb-0">
-                        <small class="text-muted">Iscritti:</small>
-                        <div class="mt-1">
-                            {% for cliente in corso.clienti %}
-                                <span class="badge bg-light text-dark me-1 mb-1">
-                                    {{ cliente.nome_completo }}
-                                </span>
-                            {% endfor %}
+                            {% if corso.clienti %}
+                            <div class="mb-0">
+                                <small class="text-muted">Iscritti:</small>
+                                <div class="mt-1">
+                                    {% for cliente in corso.clienti %}
+                                        <span class="badge bg-light text-dark me-1 mb-1">
+                                            {{ cliente.nome_completo }}
+                                        </span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            {% if corso.posti_disponibili > 0 %}
+                                <small class="text-success">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    {{ corso.posti_disponibili }} posti disponibili
+                                </small>
+                            {% else %}
+                                <small class="text-danger">
+                                    <i class="bi bi-exclamation-circle me-1"></i>
+                                    Corso completo
+                                </small>
+                            {% endif %}
                         </div>
                     </div>
-                    {% endif %}
                 </div>
-                <div class="card-footer bg-transparent">
-                    {% if corso.posti_disponibili > 0 %}
-                        <small class="text-success">
-                            <i class="bi bi-check-circle me-1"></i>
-                            {{ corso.posti_disponibili }} posti disponibili
-                        </small>
-                    {% else %}
-                        <small class="text-danger">
-                            <i class="bi bi-exclamation-circle me-1"></i>
-                            Corso completo
-                        </small>
-                    {% endif %}
-                </div>
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
-    {% else %}
+        {% endif %}
+    {% endfor %}
+</div>
+{% else %}
+<!-- Messaggio quando non ci sono corsi -->
+<div class="row">
     <div class="col-12">
         <div class="text-center py-5">
             <i class="bi bi-calendar-week text-muted" style="font-size: 4rem;"></i>
@@ -97,8 +130,8 @@
             </a>
         </div>
     </div>
-    {% endif %}
 </div>
+{% endif %}
 
 {% if corsi %}
 <div class="row mt-4">
@@ -144,5 +177,200 @@ function confermaEliminazione(nomeCorso, url) {
     document.getElementById('deleteForm').action = url;
     new bootstrap.Modal(document.getElementById('confirmDeleteModal')).show();
 }
+
+// Enhanced tab animations and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Add sparkle effect to active tab
+    function addSparkleEffect(tab) {
+        // Remove existing sparkles
+        tab.querySelectorAll('.sparkle').forEach(sparkle => sparkle.remove());
+        
+        // Create sparkles
+        for (let i = 0; i < 3; i++) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.cssText = `
+                position: absolute;
+                width: 4px;
+                height: 4px;
+                background: white;
+                border-radius: 50%;
+                pointer-events: none;
+                animation: sparkleAnimation 2s ease-in-out infinite;
+                animation-delay: ${i * 0.3}s;
+                top: ${Math.random() * 100}%;
+                left: ${Math.random() * 100}%;
+                z-index: 5;
+            `;
+            tab.appendChild(sparkle);
+        }
+    }
+    
+    // Add sparkle animation keyframes
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes sparkleAnimation {
+            0%, 100% { 
+                opacity: 0; 
+                transform: scale(0); 
+            }
+            50% { 
+                opacity: 1; 
+                transform: scale(1); 
+            }
+        }
+        
+        @keyframes cardSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        .card-animate {
+            animation: cardSlideIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Initialize sparkles on active tab
+    const activeTab = document.querySelector('.nav-link.active');
+    if (activeTab) {
+        addSparkleEffect(activeTab);
+    }
+    
+    // Add tab switch animations
+    const tabLinks = document.querySelectorAll('.nav-link');
+    tabLinks.forEach(tab => {
+        tab.addEventListener('shown.bs.tab', function(e) {
+            // Remove sparkles from all tabs
+            tabLinks.forEach(t => {
+                t.querySelectorAll('.sparkle').forEach(sparkle => sparkle.remove());
+            });
+            
+            // Add sparkles to active tab
+            addSparkleEffect(e.target);
+            
+            // Animate cards in the new tab
+            const targetPane = document.querySelector(e.target.getAttribute('data-bs-target'));
+            if (targetPane) {
+                const cards = targetPane.querySelectorAll('.card');
+                cards.forEach((card, index) => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(30px) scale(0.9)';
+                    
+                    setTimeout(() => {
+                        card.classList.add('card-animate');
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0) scale(1)';
+                    }, index * 100);
+                });
+            }
+        });
+        
+        // Add hover sound effect simulation
+        tab.addEventListener('mouseenter', function() {
+            // Create a subtle ripple effect
+            const ripple = document.createElement('div');
+            ripple.style.cssText = `
+                position: absolute;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.3);
+                pointer-events: none;
+                transform: scale(0);
+                animation: rippleEffect 0.6s linear;
+                top: 50%;
+                left: 50%;
+                width: 100px;
+                height: 100px;
+                margin-top: -50px;
+                margin-left: -50px;
+                z-index: 1;
+            `;
+            
+            this.appendChild(ripple);
+            
+            setTimeout(() => {
+                ripple.remove();
+            }, 600);
+        });
+    });
+    
+    // Add ripple effect keyframes
+    const rippleStyle = document.createElement('style');
+    rippleStyle.textContent = `
+        @keyframes rippleEffect {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(rippleStyle);
+    
+    // Add floating badge animation
+    const badges = document.querySelectorAll('.nav-link .badge');
+    badges.forEach(badge => {
+        badge.style.animation = 'float 3s ease-in-out infinite';
+    });
+    
+    // Add float animation
+    const floatStyle = document.createElement('style');
+    floatStyle.textContent = `
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-3px); }
+        }
+    `;
+    document.head.appendChild(floatStyle);
+    
+    // Add loading shimmer effect when switching tabs
+    let isAnimating = false;
+    tabLinks.forEach(tab => {
+        tab.addEventListener('click', function() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            // Add shimmer overlay
+            const shimmer = document.createElement('div');
+            shimmer.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(90deg, 
+                    transparent, 
+                    rgba(102, 126, 234, 0.1), 
+                    transparent
+                );
+                animation: shimmer 1s ease-in-out;
+                pointer-events: none;
+                z-index: 9999;
+            `;
+            
+            document.body.appendChild(shimmer);
+            
+            setTimeout(() => {
+                shimmer.remove();
+                isAnimating = false;
+            }, 1000);
+        });
+    });
+    
+    // Add shimmer animation
+    const shimmerStyle = document.createElement('style');
+    shimmerStyle.textContent = `
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100vw); }
+        }
+    `;
+    document.head.appendChild(shimmerStyle);
+});
 </script>
 {% endblock %}
