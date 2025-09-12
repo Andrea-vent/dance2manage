@@ -27,6 +27,15 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="codice_fiscale" class="form-label">Codice Fiscale</label>
+                        <input type="text" class="form-control" id="codice_fiscale" name="codice_fiscale" 
+                               value="{{ insegnante.codice_fiscale if insegnante else '' }}" 
+                               maxlength="16" placeholder="RSSMRA80A01H501X" 
+                               pattern="[A-Za-z0-9]{16}" style="text-transform: uppercase;">
+                        <div class="form-text">16 caratteri alfanumerici (opzionale)</div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label for="telefono" class="form-label">Telefono</label>
@@ -37,6 +46,43 @@
                             <label for="email" class="form-label">Email</label>
                             <input type="email" class="form-control" id="email" name="email" 
                                    value="{{ insegnante.email if insegnante else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Sezione Indirizzo -->
+                    <h5 class="mt-4 mb-3 text-primary">
+                        <i class="bi bi-geo-alt me-2"></i>Indirizzo
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="via" class="form-label">Via/Indirizzo</label>
+                            <input type="text" class="form-control" id="via" name="via" 
+                                   value="{{ insegnante.via if insegnante else '' }}" placeholder="Via Roma">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="civico" class="form-label">Civico</label>
+                            <input type="text" class="form-control" id="civico" name="civico" 
+                                   value="{{ insegnante.civico if insegnante else '' }}" placeholder="123">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <label for="cap" class="form-label">CAP</label>
+                            <input type="text" class="form-control" id="cap" name="cap" 
+                                   value="{{ insegnante.cap if insegnante else '' }}" placeholder="00100" maxlength="5">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="citta" class="form-label">Città</label>
+                            <input type="text" class="form-control" id="citta" name="citta" 
+                                   value="{{ insegnante.citta if insegnante else '' }}" placeholder="Roma">
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <label for="provincia" class="form-label">Provincia</label>
+                            <input type="text" class="form-control" id="provincia" name="provincia" 
+                                   value="{{ insegnante.provincia if insegnante else '' }}" placeholder="RM" 
+                                   maxlength="2" style="text-transform: uppercase;">
                         </div>
                     </div>
 

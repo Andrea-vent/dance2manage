@@ -12,6 +12,14 @@ class Cliente(db.Model):
     codice_fiscale = Column(String(16))
     telefono = Column(String(20))
     email = Column(String(120))
+    
+    # Campi indirizzo
+    via = Column(String(200))
+    civico = Column(String(10))
+    cap = Column(String(10))
+    citta = Column(String(100))
+    provincia = Column(String(2))
+    
     attivo = Column(Boolean, default=True)
     
     # Relazione molti-a-molti con Corsi

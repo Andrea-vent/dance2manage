@@ -9,8 +9,17 @@ class Insegnante(db.Model):
     id = Column(Integer, primary_key=True)
     nome = Column(String(100), nullable=False)
     cognome = Column(String(100), nullable=False)
+    codice_fiscale = Column(String(16))
     telefono = Column(String(20))
     email = Column(String(120))
+    
+    # Campi indirizzo
+    via = Column(String(200))
+    civico = Column(String(10))
+    cap = Column(String(10))
+    citta = Column(String(100))
+    provincia = Column(String(2))
+    
     percentuale_guadagno = Column(Float, default=30.0)  # Percentuale sui pagamenti del corso
     
     # Relazione uno-a-molti con Corsi

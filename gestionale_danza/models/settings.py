@@ -16,6 +16,7 @@ class Settings(db.Model):
     sito_web = Column(String(200))
     partita_iva = Column(String(11))
     codice_fiscale = Column(String(16))
+    logo_filename = Column(String(200))  # Nome del file logo
     note = Column(Text)
     
     def __repr__(self):

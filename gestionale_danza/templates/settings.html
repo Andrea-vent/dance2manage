@@ -21,7 +21,7 @@
                 </h4>
             </div>
             <div class="card-body">
-                <form method="POST">
+                <form method="POST" enctype="multipart/form-data">
                     <div class="row">
                         <div class="col-md-8 mb-3">
                             <label for="denominazione_sociale" class="form-label">Denominazione Sociale *</label>
@@ -34,6 +34,40 @@
                                    value="{{ settings.partita_iva or '' }}" maxlength="11" 
                                    pattern="[0-9]{11}" placeholder="12345678901">
                             <div class="form-text">11 cifre (solo numeri)</div>
+                        </div>
+                    </div>
+
+                    <!-- Sezione Logo -->
+                    <h5 class="mt-4 mb-3 text-primary">
+                        <i class="bi bi-image me-2"></i>Logo Aziendale
+                    </h5>
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="logo" class="form-label">Carica Logo</label>
+                            <input type="file" class="form-control" id="logo" name="logo" 
+                                   accept="image/*" onchange="previewLogo(this)">
+                            <div class="form-text">
+                                Formati supportati: JPG, PNG, GIF. Dimensione consigliata: 300x300px max
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Anteprima Logo</label>
+                            <div class="border rounded p-2 text-center" style="height: 120px; display: flex; align-items: center; justify-content: center;">
+                                {% if settings.logo_filename %}
+                                <img id="logoPreview" src="{{ url_for('static', filename='uploads/' + settings.logo_filename) }}" 
+                                     alt="Logo" style="max-width: 100px; max-height: 100px; object-fit: contain;">
+                                {% else %}
+                                <img id="logoPreview" src="#" alt="Nessun logo" 
+                                     style="max-width: 100px; max-height: 100px; object-fit: contain; display: none;">
+                                <span id="noLogoText" class="text-muted">Nessun logo caricato</span>
+                                {% endif %}
+                            </div>
+                            {% if settings.logo_filename %}
+                            <div class="mt-2">
+                                <small class="text-muted">File: {{ settings.logo_filename }}</small>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
@@ -152,4 +186,52 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewLogo(input) {
+    const preview = document.getElementById('logoPreview');
+    const noLogoText = document.getElementById('noLogoText');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+            if (noLogoText) noLogoText.style.display = 'none';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Validazione form
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const fileInput = document.getElementById('logo');
+    
+    form.addEventListener('submit', function(e) {
+        // Validazione file logo
+        if (fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            
+            if (file.size > maxSize) {
+                e.preventDefault();
+                alert('Il file logo è troppo grande. Dimensione massima: 5MB');
+                return false;
+            }
+            
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                e.preventDefault();
+                alert('Formato file non supportato. Usa: JPG, PNG o GIF');
+                return false;
+            }
+        }
+    });
+});
+</script>
 {% endblock %}

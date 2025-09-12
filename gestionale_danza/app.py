@@ -145,6 +145,11 @@ def nuovo_cliente():
             codice_fiscale=request.form.get('codice_fiscale', '').upper() or None,
             telefono=request.form['telefono'],
             email=request.form['email'],
+            via=request.form.get('via', ''),
+            civico=request.form.get('civico', ''),
+            cap=request.form.get('cap', ''),
+            citta=request.form.get('citta', ''),
+            provincia=request.form.get('provincia', '').upper() or None,
             attivo=bool(request.form.get('attivo'))
         )
         db.session.add(cliente)
@@ -166,6 +171,11 @@ def modifica_cliente(id):
         cliente.codice_fiscale = request.form.get('codice_fiscale', '').upper() or None
         cliente.telefono = request.form['telefono']
         cliente.email = request.form['email']
+        cliente.via = request.form.get('via', '')
+        cliente.civico = request.form.get('civico', '')
+        cliente.cap = request.form.get('cap', '')
+        cliente.citta = request.form.get('citta', '')
+        cliente.provincia = request.form.get('provincia', '').upper() or None
         cliente.attivo = bool(request.form.get('attivo'))
         
         # Gestione corsi associati
@@ -262,8 +272,14 @@ def nuovo_insegnante():
         insegnante = Insegnante(
             nome=request.form['nome'],
             cognome=request.form['cognome'],
+            codice_fiscale=request.form.get('codice_fiscale', '').upper() or None,
             telefono=request.form['telefono'],
             email=request.form['email'],
+            via=request.form.get('via', ''),
+            civico=request.form.get('civico', ''),
+            cap=request.form.get('cap', ''),
+            citta=request.form.get('citta', ''),
+            provincia=request.form.get('provincia', '').upper() or None,
             percentuale_guadagno=float(request.form.get('percentuale_guadagno', 30.0))
         )
         db.session.add(insegnante)
@@ -281,8 +297,14 @@ def modifica_insegnante(id):
     if request.method == 'POST':
         insegnante.nome = request.form['nome']
         insegnante.cognome = request.form['cognome']
+        insegnante.codice_fiscale = request.form.get('codice_fiscale', '').upper() or None
         insegnante.telefono = request.form['telefono']
         insegnante.email = request.form['email']
+        insegnante.via = request.form.get('via', '')
+        insegnante.civico = request.form.get('civico', '')
+        insegnante.cap = request.form.get('cap', '')
+        insegnante.citta = request.form.get('citta', '')
+        insegnante.provincia = request.form.get('provincia', '').upper() or None
         insegnante.percentuale_guadagno = float(request.form.get('percentuale_guadagno', 30.0))
         
         db.session.commit()
@@ -458,6 +480,38 @@ def settings():
         settings.codice_fiscale = request.form.get('codice_fiscale', '').upper() or None
         settings.note = request.form.get('note')
         
+        # Gestione caricamento logo
+        from werkzeug.utils import secure_filename
+        import uuid
+        
+        if 'logo' in request.files:
+            file = request.files['logo']
+            if file and file.filename != '':
+                # Verifica estensione file
+                allowed_extensions = {'png', 'jpg', 'jpeg', 'gif'}
+                filename = secure_filename(file.filename)
+                file_ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+                
+                if file_ext in allowed_extensions:
+                    # Genera nome file unico
+                    unique_filename = f"logo_{uuid.uuid4().hex}.{file_ext}"
+                    upload_path = os.path.join(static_folder, 'uploads', unique_filename)
+                    
+                    # Salva il file
+                    file.save(upload_path)
+                    
+                    # Elimina vecchio logo se esiste
+                    if settings.logo_filename:
+                        old_logo_path = os.path.join(static_folder, 'uploads', settings.logo_filename)
+                        if os.path.exists(old_logo_path):
+                            os.remove(old_logo_path)
+                    
+                    # Aggiorna database
+                    settings.logo_filename = unique_filename
+                    flash('Logo caricato con successo!', 'success')
+                else:
+                    flash('Formato file non supportato. Usa JPG, PNG o GIF.', 'error')
+        
         db.session.commit()
         flash('Impostazioni salvate con successo!', 'success')
         return redirect(url_for('settings'))
@@ -553,9 +607,15 @@ def genera_report_data(mese_filtro, anno_filtro):
 @app.route('/reports')
 @login_required
 def reports():
-    # Parametri filtro
+    # Parametri filtro con validazione
     mese_filtro = request.args.get('mese', date.today().month, type=int)
     anno_filtro = request.args.get('anno', date.today().year, type=int)
+    
+    # Validazione parametri
+    if mese_filtro < 1 or mese_filtro > 12:
+        mese_filtro = date.today().month
+    if anno_filtro < 2020 or anno_filtro > 2030:
+        anno_filtro = date.today().year
     
     # Nomi dei mesi per i template
     mesi = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',

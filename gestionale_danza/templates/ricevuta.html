@@ -19,13 +19,26 @@
             padding-bottom: 15px;
         }
         
-        .header h1 {
+        .logo {
+            max-width: 150px;
+            max-height: 150px;
+            object-fit: contain;
+            margin: 0 auto;
+            display: block;
+        }
+        
+        .doc-title {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .doc-title h1 {
             color: #333;
             margin: 0 0 10px 0;
             font-size: 24px;
         }
         
-        .header h2 {
+        .doc-title h2 {
             color: #666;
             margin: 0;
             font-size: 18px;
@@ -124,60 +137,124 @@
             color: #333;
         }
         
+        .footer {
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 2px solid #333;
+            text-align: center;
+            font-size: 11px;
+            line-height: 1.5;
+            color: #666;
+        }
+        
+        .company-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .company-details {
+            margin: 5px 0;
+        }
+        
         @media print {
             body {
                 margin: 0;
                 padding: 15px;
+                padding-bottom: 100px;
             }
             
             .footer {
                 position: fixed;
-                bottom: 0;
-                width: 100%;
+                bottom: 20px;
+                left: 0;
+                right: 0;
+                margin: 0;
+                padding: 15px;
+                background: white;
             }
         }
     </style>
 </head>
 <body>
-    <!-- Header -->
+    <!-- Header con logo centrato -->
     <div class="header">
-        <h1>{{ settings.denominazione_sociale if settings else 'Dance2Manage' }}</h1>
+        {% if settings and settings.logo_filename %}
+        <img src="{{ logo_absolute_path if logo_absolute_path else url_for('static', filename='uploads/' + settings.logo_filename) }}" 
+             alt="Logo {{ settings.denominazione_sociale if settings else 'Dance2Manage' }}" class="logo">
+        {% else %}
+        <!-- Fallback se non c'è logo -->
+        <div class="company-name" style="margin: 20px 0;">
+            {{ settings.denominazione_sociale if settings else 'Dance2Manage' }}
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Titolo documento -->
+    <div class="doc-title">
         <h2>Ricevuta di Pagamento</h2>
-        {% if settings and settings.indirizzo_completo %}
-        <p style="margin: 5px 0; font-size: 14px;">{{ settings.indirizzo_completo }}</p>
-        {% endif %}
-        {% if settings %}
-        <p style="margin: 5px 0; font-size: 12px;">
-            {% if settings.partita_iva %}P.IVA: {{ settings.partita_iva }} {% endif %}
-            {% if settings.codice_fiscale %}C.F.: {{ settings.codice_fiscale }}{% endif %}
-            {% if settings.telefono %} - Tel: {{ settings.telefono }}{% endif %}
-        </p>
-        {% endif %}
     </div>
 
-    <!-- Informazioni ricevuta e data -->
-    <div class="ricevuta-info">
-        <div class="data-emissione">
-            <strong>Data emissione:</strong> {{ data_emissione.strftime('%d/%m/%Y') }}
+    <!-- Layout a due colonne: Ricevuta info a sinistra, Dati Cliente a destra -->
+    <div style="display: table; width: 100%; margin-bottom: 30px;">
+        
+        <!-- Colonna sinistra: Informazioni ricevuta -->
+        <div style="display: table-cell; width: 45%; vertical-align: top; padding-right: 20px;">
+            <h4>Informazioni Documento</h4>
+            <table style="width: 100%; border: none;">
+                <tr>
+                    <td style="border: none; padding: 8px 0; font-weight: bold; width: 120px;">Data emissione:</td>
+                    <td style="border: none; padding: 8px 0;">{{ data_emissione.strftime('%d/%m/%Y') }}</td>
+                </tr>
+                <tr>
+                    <td style="border: none; padding: 8px 0; font-weight: bold;">Ricevuta N°:</td>
+                    <td style="border: none; padding: 8px 0; font-size: 16px; font-weight: bold;">{{ ricevuta_numero }}</td>
+                </tr>
+            </table>
         </div>
-        <div class="ricevuta-numero">
-            <h3>Ricevuta N° {{ ricevuta_numero }}</h3>
-        </div>
-    </div>
 
-    <!-- Informazioni cliente -->
-    <div class="cliente-info">
-        <h4>Dati Cliente</h4>
-        <p><strong>Nome:</strong> {{ pagamento.cliente.nome_completo }}</p>
-        {% if pagamento.cliente.codice_fiscale %}
-        <p><strong>Codice Fiscale:</strong> {{ pagamento.cliente.codice_fiscale }}</p>
-        {% endif %}
-        {% if pagamento.cliente.telefono %}
-        <p><strong>Telefono:</strong> {{ pagamento.cliente.telefono }}</p>
-        {% endif %}
-        {% if pagamento.cliente.email %}
-        <p><strong>Email:</strong> {{ pagamento.cliente.email }}</p>
-        {% endif %}
+        <!-- Colonna destra: Dati Cliente -->
+        <div style="display: table-cell; width: 55%; vertical-align: top; padding-left: 20px; border-left: 1px solid #ddd;">
+            <h4>Dati Cliente</h4>
+            <table style="width: 100%; border: none;">
+                <tr>
+                    <td style="border: none; padding: 5px 0; font-weight: bold; width: 130px;">Nome Completo:</td>
+                    <td style="border: none; padding: 5px 0;">{{ pagamento.cliente.nome_completo }}</td>
+                </tr>
+                <tr>
+                    <td style="border: none; padding: 5px 0; font-weight: bold;">Codice Fiscale:</td>
+                    <td style="border: none; padding: 5px 0;">{{ pagamento.cliente.codice_fiscale or '-' }}</td>
+                </tr>
+                <tr>
+                    <td style="border: none; padding: 5px 0; font-weight: bold; vertical-align: top;">Indirizzo:</td>
+                    <td style="border: none; padding: 5px 0;">
+                        {% set indirizzo_parts = [] %}
+                        {% if pagamento.cliente.via %}
+                            {% set _ = indirizzo_parts.append(pagamento.cliente.via) %}
+                        {% endif %}
+                        {% if pagamento.cliente.civico %}
+                            {% set _ = indirizzo_parts.append(pagamento.cliente.civico) %}
+                        {% endif %}
+                        {{ indirizzo_parts|join(' ') if indirizzo_parts else '-' }}
+                        {% if pagamento.cliente.cap or pagamento.cliente.citta %}
+                            <br>
+                            {% set citta_parts = [] %}
+                            {% if pagamento.cliente.cap %}
+                                {% set _ = citta_parts.append(pagamento.cliente.cap) %}
+                            {% endif %}
+                            {% if pagamento.cliente.citta %}
+                                {% set _ = citta_parts.append(pagamento.cliente.citta) %}
+                            {% endif %}
+                            {% if pagamento.cliente.provincia %}
+                                {% set _ = citta_parts.append('(' + pagamento.cliente.provincia + ')') %}
+                            {% endif %}
+                            {{ citta_parts|join(' ') }}
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+        </div>
     </div>
 
     <!-- Dettagli pagamento -->
@@ -222,13 +299,32 @@
     </div>
     {% endif %}
 
-    <!-- Footer -->
+    <!-- Footer con dati azienda -->
     <div class="footer">
-        <p>Questa ricevuta è stata generata automaticamente da Dance2Manage.</p>
-        <p>Ricevuta generata il {{ moment().strftime('%d/%m/%Y alle %H:%M') if moment else data_emissione.strftime('%d/%m/%Y alle %H:%M') }}</p>
-        {% if settings and settings.denominazione_sociale %}
-        <p>{{ settings.denominazione_sociale }}{% if settings.partita_iva %} - P.IVA {{ settings.partita_iva }}{% endif %}</p>
+        {% if settings %}
+        <div class="company-name">{{ settings.denominazione_sociale }}</div>
+        {% if settings.indirizzo_completo %}
+        <div class="company-details">{{ settings.indirizzo_completo }}</div>
         {% endif %}
+        <div class="company-details">
+            {% if settings.telefono %}Tel: {{ settings.telefono }}{% endif %}
+            {% if settings.telefono and settings.email %} | {% endif %}
+            {% if settings.email %}Email: {{ settings.email }}{% endif %}
+        </div>
+        {% if settings.partita_iva or settings.codice_fiscale %}
+        <div class="company-details">
+            {% if settings.partita_iva %}P.IVA: {{ settings.partita_iva }}{% endif %}
+            {% if settings.partita_iva and settings.codice_fiscale %} | {% endif %}
+            {% if settings.codice_fiscale %}C.F.: {{ settings.codice_fiscale }}{% endif %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="company-name">Dance2Manage</div>
+        {% endif %}
+        
+        <div style="margin-top: 15px; font-size: 10px; color: #999;">
+            Ricevuta generata il {{ moment().strftime('%d/%m/%Y alle %H:%M') if moment else data_emissione.strftime('%d/%m/%Y alle %H:%M') }}
+        </div>
     </div>
 </body>
 </html>
