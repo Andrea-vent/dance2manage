@@ -1,48 +1,185 @@
-{% extends "security/base.html" %}
+{% extends "auth_base.html" %}
 
-{% block security_content %}
-    <h4 class="text-center mb-4">Accesso al Sistema</h4>
-    
-    <form method="POST" action="{{ url_for_security('login') }}">
-        {{ login_user_form.hidden_tag() }}
-        
-        <div class="mb-3">
-            {{ login_user_form.email.label(class="form-label") }}
-            {{ login_user_form.email(class="form-control", placeholder="Inserisci la tua email") }}
-            {% if login_user_form.email.errors %}
-                <div class="text-danger small mt-1">
-                    {% for error in login_user_form.email.errors %}
-                        <div>{{ error }}</div>
-                    {% endfor %}
+{% block auth_content %}
+<div class="row w-100 justify-content-center">
+    <div class="col-xl-10 col-lg-11">
+        <div class="auth-card">
+            <div class="row g-0">
+                <!-- Logo Section -->
+                <div class="col-lg-5">
+                    <div class="logo-section h-100">
+                        <div class="position-relative z-1">
+                            {% if global_settings and global_settings.logo_filename %}
+                            <div class="company-logo">
+                                <img src="{{ url_for('static', filename='uploads/' + global_settings.logo_filename) }}" 
+                                     alt="{{ global_settings.denominazione_sociale }}" 
+                                     style="max-height: 80px; max-width: 200px; object-fit: contain; margin-bottom: 15px;">
+                            </div>
+                            <h1 class="company-name">{{ global_settings.denominazione_sociale }}</h1>
+                            {% else %}
+                            <div class="logo-icon">
+                                <i class="bi bi-music-note-beamed"></i>
+                            </div>
+                            <h1 class="company-name">Dance2Manage</h1>
+                            {% endif %}
+                            <p class="company-tagline">La gestione della tua scuola di danza, semplificata</p>
+                            
+                            <ul class="feature-list">
+                                <li class="feature-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Gestione completa allievi e corsi</span>
+                                </li>
+                                <li class="feature-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Sistema di pagamenti avanzato</span>
+                                </li>
+                                <li class="feature-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Report e statistiche dettagliate</span>
+                                </li>
+                                <li class="feature-item">
+                                    <i class="bi bi-check-circle-fill"></i>
+                                    <span>Sicurezza con autenticazione 2FA</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
-            {% endif %}
-        </div>
-        
-        <div class="mb-3">
-            {{ login_user_form.password.label(class="form-label") }}
-            {{ login_user_form.password(class="form-control", placeholder="Password") }}
-            {% if login_user_form.password.errors %}
-                <div class="text-danger small mt-1">
-                    {% for error in login_user_form.password.errors %}
-                        <div>{{ error }}</div>
-                    {% endfor %}
+                
+                <!-- Login Form Section -->
+                <div class="col-lg-7">
+                    <div class="form-section">
+                        <div class="form-title">
+                            <h2>Bentornato!</h2>
+                            <p>Accedi al tuo account per continuare</p>
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for_security('login') }}">
+                            {{ login_user_form.hidden_tag() }}
+                            
+                            <div class="form-floating">
+                                {{ login_user_form.email(class="form-control", placeholder="name@example.com", id="floatingEmail") }}
+                                <label for="floatingEmail">
+                                    <i class="bi bi-envelope me-2"></i>{{ login_user_form.email.label.text }}
+                                </label>
+                                {% if login_user_form.email.errors %}
+                                    <div class="text-danger small mt-2">
+                                        {% for error in login_user_form.email.errors %}
+                                            <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}<br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="form-floating">
+                                {{ login_user_form.password(class="form-control", placeholder="Password", id="floatingPassword") }}
+                                <label for="floatingPassword">
+                                    <i class="bi bi-lock me-2"></i>{{ login_user_form.password.label.text }}
+                                </label>
+                                {% if login_user_form.password.errors %}
+                                    <div class="text-danger small mt-2">
+                                        {% for error in login_user_form.password.errors %}
+                                            <i class="bi bi-exclamation-triangle me-1"></i>{{ error }}<br>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if login_user_form.remember %}
+                                <div class="form-check mb-4">
+                                    {{ login_user_form.remember(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ login_user_form.remember.id }}">
+                                        Ricordami
+                                    </label>
+                                </div>
+                            {% endif %}
+                            
+                            <button type="submit" class="btn btn-login">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                Accedi
+                            </button>
+                        </form>
+                        
+                        <div class="auth-links text-center mt-3 mb-4">
+                            <a href="{{ url_for('security.forgot_password') }}" class="forgot-password-link">
+                                <i class="bi bi-key me-1"></i>
+                                Password dimenticata?
+                            </a>
+                        </div>
+                        
+                        <div class="footer-text">
+                            <small>
+                                © 2024 Dance2Manage - Sistema di gestione professionale<br>
+                                <strong>Versione sicura con autenticazione a due fattori</strong>
+                            </small>
+                        </div>
+                    </div>
                 </div>
-            {% endif %}
+            </div>
         </div>
-        
-        <div class="mb-3 form-check">
-            {{ login_user_form.remember(class="form-check-input") }}
-            {{ login_user_form.remember.label(class="form-check-label") }}
-        </div>
-        
-        <div class="d-grid">
-            {{ login_user_form.submit(class="btn btn-primary") }}
-        </div>
-    </form>
-    
-    <div class="text-center mt-3">
-        <small class="text-muted">
-            Gestionale per Scuole di Danza
-        </small>
     </div>
+</div>
+
+<script>
+// Add some interactive effects
+document.addEventListener('DOMContentLoaded', function() {
+    // Focus animation for form inputs
+    const inputs = document.querySelectorAll('.form-floating .form-control');
+    inputs.forEach(input => {
+        input.addEventListener('focus', function() {
+            this.parentElement.style.transform = 'scale(1.02)';
+        });
+        
+        input.addEventListener('blur', function() {
+            this.parentElement.style.transform = 'scale(1)';
+        });
+    });
+    
+    // Add pulse animation to login button on hover
+    const loginBtn = document.querySelector('.btn-login');
+    loginBtn.addEventListener('mouseenter', function() {
+        this.style.animation = 'pulse 1s infinite';
+    });
+    
+    loginBtn.addEventListener('mouseleave', function() {
+        this.style.animation = 'none';
+    });
+});
+</script>
+
+<style>
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+.forgot-password-link {
+    color: var(--bs-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    opacity: 0.8;
+    transition: all 0.3s ease;
+    display: inline-block;
+    padding: 8px 15px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.forgot-password-link:hover {
+    color: var(--bs-primary);
+    opacity: 1;
+    text-decoration: none;
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.auth-links {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 1rem;
+}
+</style>
 {% endblock %}

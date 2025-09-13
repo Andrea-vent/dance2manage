@@ -53,6 +53,10 @@
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h5 class="mb-0">{{ corso.nome }}</h5>
                             <div class="btn-group btn-group-sm">
+                                <a href="{{ url_for('dettagli_corso', id=corso.id) }}" 
+                                   class="btn btn-outline-info" title="Visualizza">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{{ url_for('modifica_corso', id=corso.id) }}" 
                                    class="btn btn-outline-primary" title="Modifica">
                                     <i class="bi bi-pencil"></i>

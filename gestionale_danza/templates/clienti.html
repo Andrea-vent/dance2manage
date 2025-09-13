@@ -91,6 +91,10 @@
                         </td>
                         <td>
                             <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('dettagli_cliente', id=cliente.id) }}" 
+                                   class="btn btn-outline-info" title="Visualizza">
+                                    <i class="bi bi-eye"></i>
+                                </a>
                                 <a href="{{ url_for('modifica_cliente', id=cliente.id) }}" 
                                    class="btn btn-outline-primary" title="Modifica">
                                     <i class="bi bi-pencil"></i>

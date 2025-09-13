@@ -71,6 +71,17 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <label for="costo_mensile" class="form-label">Costo mensile (€) *</label>
+                        <div class="input-group">
+                            <span class="input-group-text">€</span>
+                            <input type="number" class="form-control" id="costo_mensile" name="costo_mensile" 
+                                   value="{{ corso.costo_mensile if corso else 50 }}" 
+                                   min="10" step="5" required>
+                        </div>
+                        <div class="form-text">Quota mensile che ogni studente paga per il corso</div>
+                    </div>
+
                     {% if corso and corso.clienti %}
                     <div class="mb-3">
                         <label class="form-label">Iscritti attuali ({{ corso.numero_iscritti }})</label>

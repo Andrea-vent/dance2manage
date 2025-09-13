@@ -1,6 +1,6 @@
 # models/settings.py
 from . import db
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Column, Integer, String, Text, Boolean
 
 class Settings(db.Model):
     __tablename__ = 'settings'
@@ -19,6 +19,18 @@ class Settings(db.Model):
     logo_filename = Column(String(200))  # Nome del file logo
     note = Column(Text)
     
+    # Configurazioni Email/SMTP
+    mail_server = Column(String(200))  # es. smtp.gmail.com, smtp.outlook.com
+    mail_port = Column(Integer, default=587)  # 587 per TLS, 465 per SSL
+    mail_use_tls = Column(Boolean, default=True)  # TLS encryption
+    mail_use_ssl = Column(Boolean, default=False)  # SSL encryption
+    mail_username = Column(String(200))  # Username/email per SMTP
+    mail_password = Column(String(200))  # Password per SMTP
+    mail_default_sender = Column(String(200))  # Email mittente di default
+    mail_max_emails = Column(Integer, default=100)  # Limite email per connessione
+    mail_suppress_send = Column(Boolean, default=True)  # Disabilita invio in sviluppo
+    mail_debug = Column(Boolean, default=False)  # Debug mode per mail
+    
     def __repr__(self):
         return f'<Settings {self.denominazione_sociale}>'
     
@@ -36,6 +48,16 @@ class Settings(db.Model):
             parti.append(f"({self.provincia})")
         return ', '.join(parti) if parti else None
     
+    @property
+    def mail_configured(self):
+        """Verifica se la configurazione email è completa"""
+        return bool(
+            self.mail_server and 
+            self.mail_username and 
+            self.mail_password and 
+            self.mail_default_sender
+        )
+    
     @classmethod
     def get_settings(cls):
         """Ottiene l'istanza delle impostazioni (ne esiste sempre solo una)"""
@@ -49,7 +71,18 @@ class Settings(db.Model):
                 citta='Roma',
                 provincia='RM',
                 telefono='06 12345678',
-                email='info@scuoladanza.it'
+                email='info@scuoladanza.it',
+                # Configurazioni email di default
+                mail_server='',
+                mail_port=587,
+                mail_use_tls=True,
+                mail_use_ssl=False,
+                mail_username='',
+                mail_password='',
+                mail_default_sender='',
+                mail_max_emails=100,
+                mail_suppress_send=True,
+                mail_debug=False
             )
             db.session.add(settings)
             db.session.commit()

@@ -19,6 +19,11 @@
                    class="btn btn-success">
                     <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
                 </a>
+                <a href="{{ url_for('email_all_teachers_reports', mese=mese_filtro, anno=anno_filtro) }}" 
+                   class="btn btn-outline-info" 
+                   onclick="return confirmEmailAll(event)">
+                    <i class="bi bi-envelope me-1"></i>Email a Tutti
+                </a>
             </div>
         </div>
     </div>
@@ -208,9 +213,21 @@
                                 <td class="text-success"><strong>€{{ "%.2f"|format(report.compenso_totale) }}</strong></td>
                                 <td>
                                     <a href="{{ url_for('genera_pdf_compensi_insegnante', insegnante_id=report.insegnante.id, mese=mese_filtro, anno=anno_filtro) }}" 
-                                       class="btn btn-sm btn-outline-danger" title="PDF Compenso">
+                                       class="btn btn-sm btn-outline-danger me-1" title="PDF Compenso">
                                         <i class="bi bi-file-earmark-pdf"></i>
                                     </a>
+                                    {% if report.insegnante.email %}
+                                    <a href="{{ url_for('email_teacher_report', insegnante_id=report.insegnante.id, mese=mese_filtro, anno=anno_filtro) }}" 
+                                       class="btn btn-sm btn-outline-info" 
+                                       title="Invia Report via Email"
+                                       onclick="return confirmEmailTeacher(event, '{{ report.insegnante.nome_completo }}', '{{ report.insegnante.email }}')">
+                                        <i class="bi bi-envelope"></i>
+                                    </a>
+                                    {% else %}
+                                    <span class="btn btn-sm btn-outline-secondary disabled" title="Email non configurata">
+                                        <i class="bi bi-envelope-slash"></i>
+                                    </span>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% endfor %}
@@ -281,5 +298,76 @@ document.addEventListener('DOMContentLoaded', function() {
     `;
     document.head.appendChild(style);
 });
+
+// Funzioni SweetAlert2 per conferme email
+function confirmEmailAll(event) {
+    event.preventDefault();
+    
+    Swal.fire({
+        title: 'Inviare report a tutti?',
+        text: 'Stai per inviare il report a tutti gli insegnanti via email',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0dcaf0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-envelope"></i> Invia a Tutti',
+        cancelButtonText: '<i class="bi bi-x"></i> Annulla',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostra loading
+            Swal.fire({
+                title: 'Invio in corso...',
+                text: 'Sto inviando i report agli insegnanti',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Procedi con il link
+            window.location.href = event.target.closest('a').href;
+        }
+    });
+    
+    return false;
+}
+
+function confirmEmailTeacher(event, teacherName, teacherEmail) {
+    event.preventDefault();
+    
+    Swal.fire({
+        title: 'Inviare report?',
+        html: `Stai per inviare il report a:<br><strong>${teacherName}</strong><br><small class="text-muted">${teacherEmail}</small>`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#0dcaf0',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="bi bi-envelope"></i> Invia Report',
+        cancelButtonText: '<i class="bi bi-x"></i> Annulla',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostra loading
+            Swal.fire({
+                title: 'Invio in corso...',
+                text: `Sto inviando il report a ${teacherName}`,
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Procedi con il link
+            window.location.href = event.target.closest('a').href;
+        }
+    });
+    
+    return false;
+}
 </script>
 {% endblock %}

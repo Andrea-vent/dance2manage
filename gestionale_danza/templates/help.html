@@ -17,7 +17,10 @@
                             <i class="bi bi-info-circle me-2"></i>Introduzione
                         </a>
                         <a href="#primo-accesso" class="list-group-item list-group-item-action">
-                            <i class="bi bi-play-circle me-2"></i>Primo Accesso
+                            <i class="bi bi-play-circle me-2"></i>Primo Accesso & 2FA
+                        </a>
+                        <a href="#password-recovery" class="list-group-item list-group-item-action">
+                            <i class="bi bi-key me-2"></i>Recupero Password
                         </a>
                         <a href="#clienti" class="list-group-item list-group-item-action">
                             <i class="bi bi-people me-2"></i>Gestione Clienti
@@ -32,13 +35,16 @@
                             <i class="bi bi-credit-card me-2"></i>Gestione Pagamenti
                         </a>
                         <a href="#report" class="list-group-item list-group-item-action">
-                            <i class="bi bi-graph-up me-2"></i>Report e Statistiche
+                            <i class="bi bi-graph-up me-2"></i>Report e Email
                         </a>
                         <a href="#impostazioni" class="list-group-item list-group-item-action">
-                            <i class="bi bi-gear me-2"></i>Impostazioni
+                            <i class="bi bi-gear me-2"></i>Impostazioni & Logo
+                        </a>
+                        <a href="#email-config" class="list-group-item list-group-item-action">
+                            <i class="bi bi-envelope-gear me-2"></i>Configurazione Email
                         </a>
                         <a href="#backup" class="list-group-item list-group-item-action">
-                            <i class="bi bi-shield-check me-2"></i>Backup
+                            <i class="bi bi-shield-check me-2"></i>Backup & Sicurezza
                         </a>
                     </div>
                 </div>
@@ -61,9 +67,29 @@
                         <h3 class="mb-0"><i class="bi bi-info-circle me-2"></i>Introduzione</h3>
                     </div>
                     <div class="card-body">
-                        <p class="lead">Dance2Manager è un software gestionale completo per scuole di danza.</p>
+                        <p class="lead">Dance2Manager è un software gestionale completo e moderno per scuole di danza con funzionalità avanzate di comunicazione e sicurezza.</p>
                         
-                        <h5>Funzionalità Principali:</h5>
+                        <h5>✨ Nuove Funzionalità 2024:</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Autenticazione a Due Fattori (2FA)</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Recupero Password via Email</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Email Report agli Insegnanti</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Logo Aziendale Personalizzato</strong></li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Sistema Email SMTP Integrato</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Notifiche SweetAlert Eleganti</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Report HTML con Allievi</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>UI Moderna e Responsive</strong></li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h5 class="mt-4">Funzionalità di Base:</h5>
                         <div class="row">
                             <div class="col-md-6">
                                 <ul class="list-unstyled">
@@ -86,36 +112,102 @@
                         <div class="alert alert-warning mt-3">
                             <i class="bi bi-exclamation-triangle me-2"></i>
                             <strong>Primo Accesso:</strong> Username: <code>admin</code>, Password: <code>admin123</code>
+                            <br><small class="text-muted">⚠️ Cambiare immediatamente la password predefinita per sicurezza!</small>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Primo Accesso -->
+            <!-- Primo Accesso & 2FA -->
             <section id="primo-accesso" class="mb-5">
                 <div class="card">
                     <div class="card-header bg-success text-white">
-                        <h3 class="mb-0"><i class="bi bi-play-circle me-2"></i>Primo Accesso</h3>
+                        <h3 class="mb-0"><i class="bi bi-shield-lock me-2"></i>Primo Accesso & Sicurezza 2FA</h3>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <h5>1. Configurazione Dati Azienda</h5>
-                                <p>Prima di iniziare, configurare i dati della scuola:</p>
+                                <h5>🔐 Autenticazione a Due Fattori (2FA)</h5>
+                                <p>Il sistema offre sicurezza avanzata con autenticazione a due fattori:</p>
                                 <ol>
-                                    <li>Menu utente → <strong>Impostazioni Azienda</strong></li>
-                                    <li>Inserire denominazione sociale</li>
-                                    <li>Compilare indirizzo e contatti</li>
-                                    <li>Inserire P.IVA e Codice Fiscale</li>
+                                    <li><strong>Login Standard:</strong> Username e password</li>
+                                    <li><strong>Codice 2FA via Email:</strong> Inserire il codice di 6 cifre ricevuto via email</li>
+                                    <li><strong>App Authenticator:</strong> Opzionale, scansiona QR code per Google Authenticator</li>
                                 </ol>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-info-circle me-2"></i>Configurazione 2FA</h6>
+                                    <ul class="mb-0">
+                                        <li><strong>Menu Utente</strong> → <strong>Configurazione 2FA</strong></li>
+                                        <li>Scegli tra Email o App Authenticator</li>
+                                        <li>Il 2FA è <strong>opzionale</strong> ma raccomandato</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <h5>2. Dati di Prova</h5>
-                                <p>Per testare il sistema con dati di esempio:</p>
+                                <h5>1. Configurazione Iniziale</h5>
+                                <ol>
+                                    <li><strong>Menu utente → Impostazioni Azienda</strong></li>
+                                    <li>Inserire denominazione sociale</li>
+                                    <li>Caricare logo aziendale (opzionale)</li>
+                                    <li>Compilare indirizzo e contatti</li>
+                                    <li>Configurare email SMTP per 2FA</li>
+                                </ol>
+
+                                <h5 class="mt-4">2. Dati di Prova</h5>
+                                <p>Per testare il sistema:</p>
                                 <div class="bg-light p-3 rounded">
-                                    <code>cd gestionale_danza<br>python seeder.py --reset</code>
+                                    <code>python seeder.py</code>
                                 </div>
-                                <small class="text-muted">Crea clienti, corsi e pagamenti di esempio</small>
+                                <small class="text-muted">Crea 4 insegnanti, 6 corsi, 10 clienti e 28 pagamenti</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recupero Password -->
+            <section id="password-recovery" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">
+                        <h3 class="mb-0"><i class="bi bi-key me-2"></i>Recupero Password</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>🔑 Password Dimenticata?</h5>
+                                <ol>
+                                    <li>Nella pagina di login, cliccare <strong>"Password dimenticata?"</strong></li>
+                                    <li>Inserire il proprio indirizzo email</li>
+                                    <li>Controllare la casella email (anche spam)</li>
+                                    <li>Cliccare sul link di reset ricevuto</li>
+                                    <li>Impostare nuova password sicura</li>
+                                </ol>
+
+                                <div class="alert alert-success">
+                                    <h6><i class="bi bi-shield-check me-2"></i>Sicurezza</h6>
+                                    <ul class="mb-0">
+                                        <li>Link valido per <strong>24 ore</strong></li>
+                                        <li>Validazione forza password in tempo reale</li>
+                                        <li>Conferma password obbligatoria</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>💡 Suggerimenti Password Sicura</h5>
+                                <ul>
+                                    <li><strong>Almeno 8 caratteri</strong></li>
+                                    <li><strong>Lettere maiuscole e minuscole</strong></li>
+                                    <li><strong>Numeri</strong></li>
+                                    <li><strong>Caratteri speciali</strong> (!@#$%^&*)</li>
+                                </ul>
+
+                                <div class="bg-light p-3 rounded mt-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-lightbulb me-1"></i>
+                                        Il sistema mostra un indicatore di forza password in tempo reale
+                                    </small>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -136,7 +228,7 @@
                                     <li><strong>Clienti</strong> → <strong>Nuovo Cliente</strong></li>
                                     <li>Compilare dati anagrafici</li>
                                     <li><strong>Importante:</strong> Codice Fiscale (per ricevute)</li>
-                                    <li>Inserire contatti</li>
+                                    <li>Inserire contatti (email per comunicazioni)</li>
                                 </ol>
                                 
                                 <h5 class="mt-4">Iscrizione a Corso</h5>
@@ -152,7 +244,7 @@
                                     <h6><i class="bi bi-lightbulb me-2"></i>Suggerimenti</h6>
                                     <ul class="mb-0">
                                         <li>Codice Fiscale importante per ricevute fiscali</li>
-                                        <li>Email necessaria per comunicazioni</li>
+                                        <li>Email <strong>essenziale</strong> per report automatici</li>
                                         <li>Telefono per contatti urgenti</li>
                                         <li>Data nascita per statistiche età</li>
                                     </ul>
@@ -182,6 +274,7 @@
                                     <li><strong>Insegnanti</strong> → <strong>Nuovo Insegnante</strong></li>
                                     <li>Compilare dati anagrafici</li>
                                     <li><strong>Cruciale:</strong> Impostare percentuale guadagno</li>
+                                    <li><strong>Email obbligatoria</strong> per ricevere report automatici</li>
                                     <li>Inserire contatti e specializzazioni</li>
                                 </ol>
 
@@ -195,19 +288,18 @@
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <h5>Percentuale Guadagno</h5>
-                                <p>La percentuale determina il compenso dell'insegnante:</p>
+                                <h5>📧 Report Email Automatici</h5>
+                                <p>Gli insegnanti con email ricevono automaticamente:</p>
                                 <ul>
-                                    <li><strong>30%</strong> = inserire <code>30</code></li>
-                                    <li><strong>25%</strong> = inserire <code>25</code></li>
-                                    <li><strong>40%</strong> = inserire <code>40</code></li>
+                                    <li><strong>Report compensi mensili</strong> con dettaglio per corso</li>
+                                    <li><strong>Lista completa allievi</strong> per ogni corso</li>
+                                    <li><strong>Status pagamenti</strong> per ogni allievo</li>
+                                    <li><strong>Statistiche personalizzate</strong></li>
                                 </ul>
-                                
-                                <div class="bg-light p-3 rounded mt-3">
-                                    <small class="text-muted">
-                                        <i class="bi bi-info-circle me-1"></i>
-                                        La percentuale si applica solo ai pagamenti effettivamente ricevuti
-                                    </small>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-envelope me-2"></i>Invio Report</h6>
+                                    <p class="mb-0">I report possono essere inviati da <strong>Report</strong> → <strong>Email a Tutti</strong> o singolarmente per ogni insegnante.</p>
                                 </div>
                             </div>
                         </div>
@@ -272,12 +364,13 @@
                                     <li>Sistema aggiorna automaticamente</li>
                                 </ol>
 
-                                <h5 class="mt-4">Ricevute PDF</h5>
+                                <h5 class="mt-4">🧾 Ricevute PDF con Logo</h5>
                                 <ul>
                                     <li>Cliccare <strong>Ricevuta PDF</strong></li>
-                                    <li>Include dati azienda automaticamente</li>
+                                    <li>Include <strong>logo aziendale</strong> automaticamente</li>
                                     <li>Mostra Codice Fiscale cliente</li>
                                     <li>Numerazione progressiva</li>
+                                    <li>Layout professionale</li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
@@ -299,16 +392,16 @@
                 </div>
             </section>
 
-            <!-- Report -->
+            <!-- Report e Email -->
             <section id="report" class="mb-5">
                 <div class="card">
                     <div class="card-header bg-dark text-white">
-                        <h3 class="mb-0"><i class="bi bi-graph-up me-2"></i>Report e Statistiche</h3>
+                        <h3 class="mb-0"><i class="bi bi-envelope-paper me-2"></i>Report Avanzati e Email</h3>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-4">
-                                <h5>Report Generale</h5>
+                                <h5>📊 Report Generale</h5>
                                 <ul>
                                     <li><strong>Incasso Totale:</strong> Tutti i pagamenti</li>
                                     <li><strong>Compensi Insegnanti:</strong> Da pagare</li>
@@ -317,18 +410,20 @@
                                 </ul>
                             </div>
                             <div class="col-md-4">
-                                <h5>Report per Corso</h5>
+                                <h5>🎯 Report per Corso</h5>
                                 <ul>
                                     <li>Incasso specifico corso</li>
-                                    <li>Iscritti vs paganti</li>
+                                    <li>Lista completa iscritti</li>
+                                    <li>Status pagamenti per allievo</li>
                                     <li>Compenso insegnante</li>
                                     <li>Utile corso</li>
                                 </ul>
                             </div>
                             <div class="col-md-4">
-                                <h5>Report per Insegnante</h5>
+                                <h5>👨‍🏫 Report per Insegnante</h5>
                                 <ul>
                                     <li>Lista corsi assegnati</li>
+                                    <li>Allievi per ogni corso</li>
                                     <li>Incasso totale</li>
                                     <li>Percentuale media</li>
                                     <li>Compenso da ricevere</li>
@@ -340,98 +435,81 @@
                         
                         <div class="row">
                             <div class="col-md-6">
-                                <h5>Come Generare Report</h5>
+                                <h5>📧 Sistema Email Automatico</h5>
                                 <ol>
-                                    <li><strong>Report</strong> dalla navbar</li>
-                                    <li>Selezionare mese e anno</li>
-                                    <li><strong>Genera Report</strong></li>
+                                    <li><strong>Report</strong> → Selezionare mese/anno</li>
+                                    <li><strong>Email a Tutti</strong> per invio massivo</li>
+                                    <li><strong>Icona Email</strong> per singolo insegnante</li>
                                 </ol>
+
+                                <div class="alert alert-success">
+                                    <h6><i class="bi bi-magic me-2"></i>Email Professionale</h6>
+                                    <ul class="mb-0">
+                                        <li>Design HTML responsivo</li>
+                                        <li>Logo aziendale embedded</li>
+                                        <li>Dettaglio completo per corso</li>
+                                        <li>Lista allievi con status pagamenti</li>
+                                    </ul>
+                                </div>
                             </div>
                             <div class="col-md-6">
-                                <h5>Esportazione</h5>
+                                <h5>📋 Esportazione</h5>
                                 <ul>
                                     <li><strong>Stampa:</strong> Versione stampabile</li>
                                     <li><strong>Excel:</strong> Foglio di calcolo</li>
+                                    <li><strong>PDF Compensi:</strong> Per insegnante</li>
+                                    <li><strong>Email HTML:</strong> Report interattivi</li>
                                 </ul>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-clock me-2"></i>Automazione</h6>
+                                    <p class="mb-0">Gli insegnanti ricevono report dettagliati via email con un solo clic, inclusi tutti gli allievi e i relativi pagamenti.</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Impostazioni -->
+            <!-- Impostazioni & Logo -->
             <section id="impostazioni" class="mb-5">
                 <div class="card">
                     <div class="card-header bg-secondary text-white">
-                        <h3 class="mb-0"><i class="bi bi-gear me-2"></i>Impostazioni Azienda</h3>
+                        <h3 class="mb-0"><i class="bi bi-image me-2"></i>Impostazioni Azienda & Logo</h3>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <h5>Dati Obbligatori</h5>
+                                <h5>🏢 Dati Aziendali</h5>
                                 <ul>
                                     <li><strong>Denominazione Sociale:</strong> Nome ufficiale</li>
-                                    <li>Appare su tutte le ricevute</li>
-                                </ul>
-
-                                <h5 class="mt-4">Dati Opzionali</h5>
-                                <ul>
                                     <li>Indirizzo completo</li>
                                     <li>Partita IVA (11 cifre)</li>
                                     <li>Codice Fiscale (16 caratteri)</li>
                                     <li>Contatti (telefono, email, web)</li>
                                 </ul>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="alert alert-success">
-                                    <h6><i class="bi bi-eye me-2"></i>Anteprima Dati</h6>
-                                    <p class="mb-0">La sezione "Anteprima" mostra come appariranno i dati nelle ricevute PDF.</p>
-                                </div>
 
                                 <div class="alert alert-warning">
                                     <i class="bi bi-exclamation-triangle me-2"></i>
-                                    <strong>Importante:</strong> Questi dati appaiono su tutte le ricevute generate dal sistema.
+                                    <strong>Importante:</strong> Questi dati appaiono su tutte le ricevute e comunicazioni.
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Backup -->
-            <section id="backup" class="mb-5">
-                <div class="card">
-                    <div class="card-header bg-danger text-white">
-                        <h3 class="mb-0"><i class="bi bi-shield-check me-2"></i>Backup e Sicurezza</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
                             <div class="col-md-6">
-                                <h5>Backup Automatico</h5>
+                                <h5>🎨 Logo Aziendale</h5>
                                 <ol>
-                                    <li>Menu utente → <strong>Backup Database</strong></li>
-                                    <li>File scaricato: <code>backup_YYYYMMDD_HHMMSS.db</code></li>
-                                    <li>Conservare in luogo sicuro</li>
+                                    <li>Sezione <strong>"Logo Aziendale"</strong></li>
+                                    <li>Cliccare <strong>"Carica Logo"</strong></li>
+                                    <li>Scegliere file (JPG, PNG, GIF)</li>
+                                    <li>Anteprima immediata</li>
                                 </ol>
 
-                                <h5 class="mt-4">Backup Manuale</h5>
-                                <p>Copiare il file: <code>gestionale_danza/database.db</code></p>
-                            </div>
-                            <div class="col-md-6">
-                                <h5>Ripristino</h5>
-                                <ol>
-                                    <li>Fermare l'applicazione</li>
-                                    <li>Sostituire <code>database.db</code></li>
-                                    <li>Riavviare applicazione</li>
-                                </ol>
-
-                                <div class="alert alert-danger mt-3">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    <strong>Sicurezza:</strong>
+                                <div class="alert alert-success">
+                                    <h6><i class="bi bi-eye me-2"></i>Il Logo Appare in:</h6>
                                     <ul class="mb-0">
-                                        <li>Cambiare password predefinita</li>
-                                        <li>Non condividere credenziali</li>
-                                        <li>Backup regolari essenziali</li>
+                                        <li>📧 <strong>Tutte le email</strong> (report, 2FA, recovery)</li>
+                                        <li>🔐 <strong>Pagine di login</strong> e autenticazione</li>
+                                        <li>🧾 <strong>Ricevute PDF</strong></li>
+                                        <li>⚙️ <strong>Anteprima impostazioni</strong></li>
                                     </ul>
                                 </div>
                             </div>
@@ -440,7 +518,106 @@
                 </div>
             </section>
 
-            <!-- FAQ -->
+            <!-- Configurazione Email -->
+            <section id="email-config" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0"><i class="bi bi-envelope-gear me-2"></i>Configurazione Email SMTP</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>⚙️ Setup SMTP</h5>
+                                <ol>
+                                    <li><strong>Impostazioni</strong> → Sezione <strong>"Email SMTP"</strong></li>
+                                    <li>Scegliere provider dal menu preimpostato:</li>
+                                    <ul>
+                                        <li>Gmail</li>
+                                        <li>Outlook/Hotmail</li>
+                                        <li>Yahoo</li>
+                                        <li>Mailtrap (testing)</li>
+                                        <li>SendGrid</li>
+                                        <li>Altri provider personalizzati</li>
+                                    </ul>
+                                    <li>Inserire username e password</li>
+                                    <li><strong>Test Email</strong> per verificare</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>📧 Funzionalità Email</h5>
+                                <p>Una volta configurato, il sistema invierà:</p>
+                                <ul>
+                                    <li><strong>🔐 Codici 2FA</strong> per login sicuro</li>
+                                    <li><strong>🔑 Link recupero password</strong> automatici</li>
+                                    <li><strong>📊 Report compensi</strong> agli insegnanti</li>
+                                </ul>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-toggle-on me-2"></i>Modalità Test</h6>
+                                    <p class="mb-2">Attivare <strong>"Modalità Test"</strong> per:</p>
+                                    <ul class="mb-0">
+                                        <li>Testare configurazione senza invio reale</li>
+                                        <li>Debug problemi SMTP</li>
+                                        <li>Disattivare per inviare email reali</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Backup & Sicurezza -->
+            <section id="backup" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-danger text-white">
+                        <h3 class="mb-0"><i class="bi bi-shield-check me-2"></i>Backup e Sicurezza Avanzata</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>💾 Backup Database</h5>
+                                <ol>
+                                    <li>Menu utente → <strong>Backup Database</strong></li>
+                                    <li>File scaricato: <code>backup_YYYYMMDD_HHMMSS.db</code></li>
+                                    <li>Conservare in luogo sicuro</li>
+                                </ol>
+
+                                <h5 class="mt-4">🔄 Ripristino</h5>
+                                <ol>
+                                    <li>Fermare l'applicazione</li>
+                                    <li>Sostituire <code>data/database.db</code></li>
+                                    <li>Riavviare applicazione</li>
+                                </ol>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>🛡️ Sicurezza Avanzata</h5>
+                                <div class="alert alert-danger">
+                                    <h6><i class="bi bi-shield-exclamation me-2"></i>Essenziale per Sicurezza:</h6>
+                                    <ul class="mb-0">
+                                        <li><strong>Cambiare password default</strong> admin/admin123</li>
+                                        <li><strong>Attivare 2FA</strong> per account admin</li>
+                                        <li><strong>Configurare email</strong> per recovery</li>
+                                        <li><strong>Backup regolari</strong> (settimanali)</li>
+                                        <li><strong>Non condividere</strong> credenziali</li>
+                                    </ul>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-info-circle me-2"></i>Best Practice</h6>
+                                    <ul class="mb-0">
+                                        <li>Backup prima di aggiornamenti</li>
+                                        <li>Password complesse per email SMTP</li>
+                                        <li>Verifica periodica log accessi</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FAQ Aggiornate -->
             <section id="faq" class="mb-5">
                 <div class="card">
                     <div class="card-header bg-light">
@@ -451,12 +628,12 @@
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
-                                        Il software funziona offline?
+                                        Come configurare l'email per 2FA e report?
                                     </button>
                                 </h2>
                                 <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                     <div class="accordion-body">
-                                        Sì, completamente offline. Richiede solo Python installato sul computer.
+                                        Vai in <strong>Impostazioni → Email SMTP</strong>, scegli il provider (Gmail consigliato), inserisci le credenziali e testa l'invio. Per Gmail, usa una "password per le app" invece della password normale.
                                     </div>
                                 </div>
                             </div>
@@ -464,12 +641,12 @@
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
-                                        Posso usarlo su più computer?
+                                        Non ricevo i codici 2FA via email, cosa fare?
                                     </button>
                                 </h2>
                                 <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                     <div class="accordion-body">
-                                        Sì, copiando l'intera cartella sulla chiavetta USB e avviando da lì.
+                                        1) Controlla la cartella spam, 2) Verifica configurazione SMTP in Impostazioni, 3) Disattiva "Modalità Test" se attiva, 4) Testa l'invio con il pulsante "Test Email".
                                     </div>
                                 </div>
                             </div>
@@ -477,12 +654,12 @@
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
-                                        Quanti clienti può gestire?
+                                        Come aggiungere il logo aziendale?
                                     </button>
                                 </h2>
                                 <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                     <div class="accordion-body">
-                                        Praticamente illimitati. Dipende solo dallo spazio di archiviazione disponibile.
+                                        <strong>Impostazioni → Logo Aziendale → Carica Logo</strong>. Formati supportati: JPG, PNG, GIF. Il logo apparirà automaticamente in login, email e ricevute PDF.
                                     </div>
                                 </div>
                             </div>
@@ -490,12 +667,38 @@
                             <div class="accordion-item">
                                 <h2 class="accordion-header">
                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4">
-                                        Come personalizzo le ricevute?
+                                        Gli insegnanti non ricevono i report via email?
                                     </button>
                                 </h2>
                                 <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                     <div class="accordion-body">
-                                        Modificando il template <code>templates/ricevuta.html</code>. Richiede conoscenze HTML/CSS di base.
+                                        Verifica: 1) L'insegnante ha un indirizzo email configurato, 2) Email SMTP configurata correttamente, 3) "Modalità Test" disattivata, 4) Controlla spam dell'insegnante.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5">
+                                        Il software funziona offline?
+                                    </button>
+                                </h2>
+                                <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Sì, completamente offline per gestione dati. Richiede connessione internet solo per: invio email, 2FA, recupero password. Tutti i dati sono salvati localmente.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6">
+                                        Posso personalizzare i report email?
+                                    </button>
+                                </h2>
+                                <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        I report email includono automaticamente: logo aziendale, dati completi per corso, lista allievi, status pagamenti. Per personalizzazioni avanzate è necessario modificare i template HTML in <code>templates/emails/</code>.
                                     </div>
                                 </div>
                             </div>
@@ -509,7 +712,7 @@
                 <hr>
                 <small>
                     <i class="bi bi-info-circle me-1"></i>
-                    Dance2Manager v1.0 - Guida aggiornata al {{ moment().strftime('%d/%m/%Y') if moment else '' }}
+                    Dance2Manager v2.0 - Guida aggiornata con funzionalità Email & 2FA - {{ moment().strftime('%d/%m/%Y') if moment else '2024' }}
                 </small>
             </div>
         </div>

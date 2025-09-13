@@ -15,6 +15,8 @@
     <link href="{{ url_for('static', filename='css/select2-bootstrap-5-theme.min.css') }}" rel="stylesheet">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- SweetAlert2 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.4/dist/sweetalert2.min.css" rel="stylesheet">
 </head>
 <body>
     {% if session.user_id %}
@@ -62,6 +64,13 @@
                             <i class="bi bi-graph-up me-1"></i>Report
                         </a>
                     </li>
+                    {% if current_user.has_role('admin') %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('gestione_utenti') }}">
+                            <i class="bi bi-people-fill me-1"></i>Gestione Utenti
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
                 
                 <ul class="navbar-nav">
@@ -78,11 +87,15 @@
                                 <i class="bi bi-gear me-1"></i>Impostazioni Azienda
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('user_profile') }}">
+                                <i class="bi bi-person-circle me-1"></i>Profilo Utente
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('backup_database') }}">
                                 <i class="bi bi-download me-1"></i>Backup Database
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                            <li><a class="dropdown-item" href="{{ url_for_security('logout') }}">
                                 <i class="bi bi-box-arrow-right me-1"></i>Logout
                             </a></li>
                         </ul>
@@ -95,18 +108,7 @@
 
     <!-- Main Content -->
     <main class="container mt-4">
-        <!-- Flash Messages -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-
+        <!-- Flash Messages now handled by Toastr automatically -->
         {% block content %}{% endblock %}
     </main>
 
@@ -123,11 +125,38 @@
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
     <!-- jQuery (required for DataTables) -->
     <script src="{{ url_for('static', filename='js/jquery-3.7.1.min.js') }}"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.10.4/dist/sweetalert2.all.min.js"></script>
     <!-- DataTables JS -->
     <script src="{{ url_for('static', filename='js/jquery.dataTables.min.js') }}"></script>
     <script src="{{ url_for('static', filename='js/dataTables.bootstrap5.min.js') }}"></script>
     <!-- Select2 JS -->
     <script src="{{ url_for('static', filename='js/select2.min.js') }}"></script>
+    
+    <!-- Toastr CSS and JS for responsive notifications -->
+    {{ toastr.include_toastr_css() }}
+    {{ toastr.include_toastr_js() }}
+    <script>
+        // Custom Toastr configuration to avoid Python boolean issues
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": false,
+            "progressBar": false,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+    </script>
+    {{ toastr.message() }}
     
     {% block scripts %}{% endblock %}
 </body>

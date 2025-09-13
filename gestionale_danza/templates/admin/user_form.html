@@ -168,7 +168,12 @@ document.querySelector('form').addEventListener('submit', function(e) {
     const roles = document.querySelectorAll('input[name="roles"]:checked');
     if (roles.length === 0) {
         e.preventDefault();
-        alert('Seleziona almeno un ruolo per l\'utente');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Ruolo richiesto',
+            text: 'Seleziona almeno un ruolo per l\'utente',
+            confirmButtonColor: '#0d6efd'
+        });
     }
 });
 </script>

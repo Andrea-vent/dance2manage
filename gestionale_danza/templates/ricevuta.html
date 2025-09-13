@@ -286,7 +286,7 @@
 
     <!-- Informazioni pagamento -->
     <div style="margin-bottom: 20px;">
-        <p><strong>Metodo di pagamento:</strong> Contanti</p>
+        <p><strong>Metodo di pagamento:</strong> {{ pagamento.metodo_pagamento or 'Contanti' }}</p>
         <p><strong>Data pagamento:</strong> {{ pagamento.data_pagamento.strftime('%d/%m/%Y') if pagamento.data_pagamento else 'N/A' }}</p>
         <p><strong>Stato:</strong> {% if pagamento.pagato %}✓ Pagato{% else %}⚠ Non pagato{% endif %}</p>
     </div>

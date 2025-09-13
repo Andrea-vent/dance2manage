@@ -9,6 +9,7 @@ from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_security import Security, SQLAlchemyUserDatastore, login_required as security_login_required, roles_required
 from flask_mailman import Mail
+from flask_toastr import Toastr
 from models import db, User, Role, WebAuthn, Cliente, Corso, Insegnante, Pagamento, Settings
 from utils.stampa_pdf import genera_ricevuta_pdf
 import tempfile
@@ -35,14 +36,15 @@ app.config['SECURITY_PASSWORD_SALT'] = 'danza-security-salt-2024'
 app.config['SECURITY_TWO_FACTOR_ENABLED_METHODS'] = ['email', 'authenticator']
 app.config['SECURITY_TWO_FACTOR'] = True
 app.config['SECURITY_TWO_FACTOR_RESCUE_EMAIL'] = 'admin@dance2manage.com'
-app.config['SECURITY_TWO_FACTOR_LOGIN_VALIDITY'] = '1 week'
+app.config['SECURITY_TWO_FACTOR_LOGIN_VALIDITY'] = '1 weeks'
 app.config['SECURITY_TWO_FACTOR_ALWAYS_VALIDATE'] = False
 app.config['SECURITY_CHANGEABLE'] = True
 app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
 app.config['SECURITY_REGISTERABLE'] = False
 app.config['SECURITY_SEND_PASSWORD_CHANGE_EMAIL'] = False
-app.config['SECURITY_SEND_PASSWORD_RESET_EMAIL'] = False
-app.config['SECURITY_SEND_PASSWORD_RESET_NOTICE_EMAIL'] = False
+app.config['SECURITY_SEND_PASSWORD_RESET_EMAIL'] = True
+app.config['SECURITY_SEND_PASSWORD_RESET_NOTICE_EMAIL'] = True
+app.config['SECURITY_RECOVERABLE'] = True
 
 # Disable strict email validation
 app.config['SECURITY_EMAIL_VALIDATOR_ARGS'] = {'check_deliverability': False}
@@ -85,9 +87,65 @@ security = Security(app, user_datastore)
 # Initialize Mail
 mail = Mail(app)
 
+# Initialize Toastr for better flash messages
+toastr = Toastr(app)
+
+# Configure Toastr settings for better appearance (simplified to avoid JavaScript errors)
+app.config['TOASTR_TIMEOUT'] = 5000
+app.config['TOASTR_POSITION_CLASS'] = 'toast-top-right'
+
+# Context processor per rendere settings disponibili in tutti i template
+@app.context_processor
+def inject_settings():
+    try:
+        settings = Settings.get_settings()
+        return dict(global_settings=settings)
+    except Exception:
+        return dict(global_settings=None)
+
 # Crea cartelle necessarie
 pdf_folder = os.path.join(base_path, 'pdf_ricevute')
 os.makedirs(pdf_folder, exist_ok=True)
+
+def update_mail_config(settings):
+    """Aggiorna la configurazione Flask-Mail dinamicamente"""
+    if settings.mail_configured:
+        app.config['MAIL_SERVER'] = settings.mail_server
+        app.config['MAIL_PORT'] = settings.mail_port
+        app.config['MAIL_USE_TLS'] = settings.mail_use_tls
+        app.config['MAIL_USE_SSL'] = settings.mail_use_ssl
+        app.config['MAIL_USERNAME'] = settings.mail_username
+        app.config['MAIL_PASSWORD'] = settings.mail_password
+        app.config['MAIL_DEFAULT_SENDER'] = settings.mail_default_sender
+        app.config['MAIL_MAX_EMAILS'] = settings.mail_max_emails
+        app.config['MAIL_SUPPRESS_SEND'] = settings.mail_suppress_send
+        app.config['MAIL_DEBUG'] = settings.mail_debug
+        
+        # Aggiorna anche le configurazioni Flask-Security per email
+        app.config['SECURITY_EMAIL_SENDER'] = settings.mail_default_sender
+        app.config['MAIL_SUPPRESS_SEND'] = settings.mail_suppress_send
+        
+        # Re-inizializza Mail con nuove configurazioni
+        global mail
+        mail.init_app(app)
+        
+        print(f"✓ Configurazione email aggiornata: {settings.mail_server}:{settings.mail_port}")
+    else:
+        # Disabilita email se non configurata
+        app.config['MAIL_SUPPRESS_SEND'] = True
+        app.config['SECURITY_EMAIL_SENDER'] = 'noreply@dance2manage.com'
+        print("⚠ Email non configurata - invio disabilitato")
+
+def init_mail_config():
+    """Inizializza la configurazione email all'avvio"""
+    try:
+        with app.app_context():
+            settings = Settings.get_settings()
+            update_mail_config(settings)
+    except Exception as e:
+        print(f"⚠ Errore inizializzazione email: {str(e)}")
+        # Fallback su configurazione di default
+        app.config['MAIL_SUPPRESS_SEND'] = True
 
 def init_db():
     """Inizializza il database e crea utente admin se non esiste"""
@@ -115,6 +173,9 @@ def init_db():
             user_datastore.add_role_to_user(admin, 'admin')
         
         db.session.commit()
+        
+        # Inizializza configurazione email
+        init_mail_config()
 
 # Use Flask-Security login_required decorator
 from flask_security import login_required
@@ -626,6 +687,7 @@ def backup_database():
                             arc_path = os.path.relpath(file_path, base_path)
                             zipf.write(file_path, arc_path)
             
+            flash('Backup database creato con successo!', 'info')
             return send_file(temp_file.name, as_attachment=True, download_name=backup_name)
     
     except Exception as e:
@@ -650,6 +712,18 @@ def settings():
         settings.partita_iva = request.form.get('partita_iva')
         settings.codice_fiscale = request.form.get('codice_fiscale', '').upper() or None
         settings.note = request.form.get('note')
+        
+        # Configurazioni Email/SMTP
+        settings.mail_server = request.form.get('mail_server', '').strip()
+        settings.mail_port = int(request.form.get('mail_port', 587))
+        settings.mail_use_tls = bool(request.form.get('mail_use_tls'))
+        settings.mail_use_ssl = bool(request.form.get('mail_use_ssl'))
+        settings.mail_username = request.form.get('mail_username', '').strip()
+        settings.mail_password = request.form.get('mail_password', '').strip()
+        settings.mail_default_sender = request.form.get('mail_default_sender', '').strip()
+        settings.mail_max_emails = int(request.form.get('mail_max_emails', 100))
+        settings.mail_suppress_send = bool(request.form.get('mail_suppress_send'))
+        settings.mail_debug = bool(request.form.get('mail_debug'))
         
         # Gestione caricamento logo
         from werkzeug.utils import secure_filename
@@ -684,10 +758,109 @@ def settings():
                     flash('Formato file non supportato. Usa JPG, PNG o GIF.', 'error')
         
         db.session.commit()
-        flash('Impostazioni salvate con successo!', 'success')
+        
+        # Aggiorna configurazione Flask-Mail dinamicamente
+        try:
+            update_mail_config(settings)
+            flash('Impostazioni salvate con successo! Configurazione email aggiornata.', 'success')
+        except Exception as e:
+            flash(f'Impostazioni salvate, ma errore nella configurazione email: {str(e)}', 'warning')
+        
         return redirect(url_for('settings'))
     
     return render_template('settings.html', settings=settings)
+
+@app.route('/settings/test-email', methods=['POST'])
+@login_required
+def test_email():
+    """Route per testare la configurazione email"""
+    from flask_mailman import EmailMessage
+    from flask_security import current_user
+    
+    try:
+        # Ottieni configurazioni attuali
+        settings = Settings.get_settings()
+        
+        if not settings.mail_configured:
+            return jsonify({'success': False, 'message': 'Configurazione email incompleta'})
+        
+        # Aggiorna configurazione Flask-Mail
+        update_mail_config(settings)
+        
+        
+        # Email di test
+        test_email_recipient = request.json.get('email', current_user.email)
+        
+        if not test_email_recipient:
+            return jsonify({'success': False, 'message': 'Indirizzo email destinatario non specificato'})
+        
+        # Crea messaggio di test
+        msg = EmailMessage(
+            subject=f'Test Email - {settings.denominazione_sociale}',
+            body=f'''Questa è un'email di test dal sistema Dance2Manage.
+            
+Configurazione utilizzata:
+- Server SMTP: {settings.mail_server}:{settings.mail_port}
+- TLS: {"Sì" if settings.mail_use_tls else "No"}
+- SSL: {"Sì" if settings.mail_use_ssl else "No"}
+- Username: {settings.mail_username}
+- Mittente: {settings.mail_default_sender}
+
+Data/Ora: {datetime.now().strftime("%d/%m/%Y %H:%M:%S")}
+
+Se ricevi questa email, la configurazione SMTP è corretta!
+
+--
+{settings.denominazione_sociale}
+Dance2Manage System''',
+            from_email=settings.mail_default_sender,
+            to=[test_email_recipient]
+        )
+        
+        # Invia email
+        if not settings.mail_suppress_send:
+            msg.send()
+            message = f'Email di test inviata con successo a {test_email_recipient}'
+        else:
+            message = f'Email di test preparata ma non inviata (modalità test attiva). Destinatario: {test_email_recipient}'
+        
+        return jsonify({'success': True, 'message': message})
+        
+    except Exception as e:
+        error_message = f'Errore durante l\'invio dell\'email di test: {str(e)}'
+        print(f"❌ Test email fallito: {error_message}")
+        return jsonify({'success': False, 'message': error_message})
+
+@app.route('/debug/email-config')
+@login_required
+def debug_email_config():
+    """Route di debug per verificare configurazione email"""
+    settings = Settings.get_settings()
+    
+    config_info = {
+        'Database Settings': {
+            'mail_server': settings.mail_server,
+            'mail_port': settings.mail_port,
+            'mail_username': settings.mail_username,
+            'mail_password': '***' if settings.mail_password else None,
+            'mail_default_sender': settings.mail_default_sender,
+            'mail_use_tls': settings.mail_use_tls,
+            'mail_use_ssl': settings.mail_use_ssl,
+            'mail_suppress_send': settings.mail_suppress_send,
+            'mail_configured': settings.mail_configured
+        },
+        'Flask App Config': {
+            'MAIL_SERVER': app.config.get('MAIL_SERVER'),
+            'MAIL_PORT': app.config.get('MAIL_PORT'),
+            'MAIL_USERNAME': app.config.get('MAIL_USERNAME'),
+            'MAIL_USE_TLS': app.config.get('MAIL_USE_TLS'),
+            'MAIL_USE_SSL': app.config.get('MAIL_USE_SSL'),
+            'MAIL_SUPPRESS_SEND': app.config.get('MAIL_SUPPRESS_SEND'),
+            'MAIL_DEFAULT_SENDER': app.config.get('MAIL_DEFAULT_SENDER')
+        }
+    }
+    
+    return jsonify(config_info)
 
 @app.route('/help')
 @login_required
@@ -958,6 +1131,212 @@ def genera_pdf_compensi_insegnante(insegnante_id):
     except Exception as e:
         flash(f'Errore durante generazione PDF: {str(e)}', 'error')
         return redirect(url_for('reports'))
+
+# EMAIL REPORTS ROUTES
+@app.route('/reports/email_teacher/<int:insegnante_id>')
+@login_required
+def email_teacher_report(insegnante_id):
+    """Invia report via email a singolo insegnante"""
+    from flask_mailman import EmailMultiAlternatives
+    
+    # Parametri filtro
+    mese_filtro = request.args.get('mese', date.today().month, type=int)
+    anno_filtro = request.args.get('anno', date.today().year, type=int)
+    
+    # Trova insegnante
+    insegnante = Insegnante.query.get_or_404(insegnante_id)
+    
+    if not insegnante.email:
+        flash(f'Insegnante {insegnante.nome_completo} non ha un indirizzo email configurato', 'error')
+        return redirect(url_for('reports'))
+    
+    # Genera dati
+    report_corsi, report_insegnanti, riepilogo = genera_report_data(mese_filtro, anno_filtro)
+    
+    # Filtra solo questo insegnante
+    report_insegnante = next((r for r in report_insegnanti if r.insegnante.id == insegnante_id), None)
+    if not report_insegnante:
+        flash('Nessun dato per questo insegnante nel periodo selezionato', 'warning')
+        return redirect(url_for('reports'))
+    
+    # Corsi dell'insegnante
+    corsi_dettaglio = [r for r in report_corsi if r.insegnante.id == insegnante_id]
+    
+    try:
+        # Ottieni impostazioni per mittente
+        settings = Settings.get_settings()
+        
+        # Verifica configurazione email
+        if not settings.mail_configured:
+            flash('Configurazione email non completata. Vai in Impostazioni per configurare SMTP.', 'error')
+            return redirect(url_for('reports'))
+        
+        # Nomi mesi per template
+        mesi = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+        
+        # Dati per template
+        template_data = {
+            'insegnante': insegnante,
+            'report': report_insegnante,
+            'corsi_dettaglio': corsi_dettaglio,
+            'mese_nome': mesi[mese_filtro],
+            'mese_filtro': mese_filtro,
+            'anno': anno_filtro,
+            'settings': settings,
+            'data_generazione': datetime.now().strftime('%d/%m/%Y alle %H:%M')
+        }
+        
+        # Render templates
+        html_content = render_template('emails/teacher_report.html', **template_data)
+        text_content = render_template('emails/teacher_report.txt', **template_data)
+        
+        # Soggetto email
+        subject = f"Report Compensi {mesi[mese_filtro]} {anno_filtro} - {insegnante.nome_completo}"
+        
+        # Crea email
+        email = EmailMultiAlternatives(
+            subject=subject,
+            body=text_content,
+            from_email=settings.mail_default_sender,
+            to=[insegnante.email]
+        )
+        email.attach_alternative(html_content, "text/html")
+        
+        # Allega logo se presente
+        if settings.logo_filename:
+            import mimetypes
+            logo_path = os.path.join(static_folder, 'uploads', settings.logo_filename)
+            if os.path.exists(logo_path):
+                with open(logo_path, 'rb') as f:
+                    logo_data = f.read()
+                    content_type, _ = mimetypes.guess_type(logo_path)
+                    if not content_type:
+                        content_type = 'image/png'
+                    
+                    from email.mime.image import MIMEImage
+                    # Crea allegato inline per cid:logo
+                    logo_attachment = MIMEImage(logo_data)
+                    logo_attachment.add_header('Content-ID', '<logo>')
+                    logo_attachment.add_header('Content-Disposition', 'inline', filename=settings.logo_filename)
+                    email.attach(logo_attachment)
+        
+        # Invia email
+        email.send()
+        
+        flash(f'Report inviato con successo all\'insegnante {insegnante.nome_completo} ({insegnante.email})', 'success')
+        
+    except Exception as e:
+        flash(f'Errore durante invio email: {str(e)}', 'error')
+        print(f"Email error: {str(e)}")  # Debug
+    
+    return redirect(url_for('reports'))
+
+@app.route('/reports/email_all_teachers')
+@login_required
+def email_all_teachers_reports():
+    """Invia report via email a tutti gli insegnanti che hanno un compenso"""
+    from flask_mailman import EmailMultiAlternatives
+    
+    # Parametri filtro
+    mese_filtro = request.args.get('mese', date.today().month, type=int)
+    anno_filtro = request.args.get('anno', date.today().year, type=int)
+    
+    # Genera dati
+    report_corsi, report_insegnanti, riepilogo = genera_report_data(mese_filtro, anno_filtro)
+    
+    if not report_insegnanti:
+        flash('Nessun dato disponibile per il periodo selezionato', 'warning')
+        return redirect(url_for('reports'))
+    
+    try:
+        # Ottieni impostazioni per mittente
+        settings = Settings.get_settings()
+        
+        # Verifica configurazione email
+        if not settings.mail_configured:
+            flash('Configurazione email non completata. Vai in Impostazioni per configurare SMTP.', 'error')
+            return redirect(url_for('reports'))
+        
+        # Nomi mesi per template
+        mesi = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno',
+                'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
+        
+        emails_sent = 0
+        emails_skipped = 0
+        
+        for report_insegnante in report_insegnanti:
+            insegnante = report_insegnante.insegnante
+            
+            # Salta insegnanti senza email
+            if not insegnante.email:
+                emails_skipped += 1
+                continue
+            
+            # Corsi dell'insegnante
+            corsi_dettaglio = [r for r in report_corsi if r.insegnante.id == insegnante.id]
+            
+            # Dati per template
+            template_data = {
+                'insegnante': insegnante,
+                'report': report_insegnante,
+                'corsi_dettaglio': corsi_dettaglio,
+                'mese_nome': mesi[mese_filtro],
+                'mese_filtro': mese_filtro,
+                'anno': anno_filtro,
+                'settings': settings,
+                'data_generazione': datetime.now().strftime('%d/%m/%Y alle %H:%M')
+            }
+            
+            # Render templates
+            html_content = render_template('emails/teacher_report.html', **template_data)
+            text_content = render_template('emails/teacher_report.txt', **template_data)
+            
+            # Soggetto email
+            subject = f"Report Compensi {mesi[mese_filtro]} {anno_filtro} - {insegnante.nome_completo}"
+            
+            # Crea e invia email
+            email = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.mail_default_sender,
+                to=[insegnante.email]
+            )
+            email.attach_alternative(html_content, "text/html")
+            
+            # Allega logo se presente
+            if settings.logo_filename:
+                import mimetypes
+                logo_path = os.path.join(static_folder, 'uploads', settings.logo_filename)
+                if os.path.exists(logo_path):
+                    with open(logo_path, 'rb') as f:
+                        logo_data = f.read()
+                        content_type, _ = mimetypes.guess_type(logo_path)
+                        if not content_type:
+                            content_type = 'image/png'
+                        
+                        from email.mime.image import MIMEImage
+                        # Crea allegato inline per cid:logo
+                        logo_attachment = MIMEImage(logo_data)
+                        logo_attachment.add_header('Content-ID', '<logo>')
+                        logo_attachment.add_header('Content-Disposition', 'inline', filename=settings.logo_filename)
+                        email.attach(logo_attachment)
+            
+            email.send()
+            
+            emails_sent += 1
+        
+        if emails_sent > 0:
+            flash(f'Report inviati con successo a {emails_sent} insegnanti', 'success')
+        
+        if emails_skipped > 0:
+            flash(f'{emails_skipped} insegnanti saltati (email mancante)', 'info')
+            
+    except Exception as e:
+        flash(f'Errore durante invio email: {str(e)}', 'error')
+        print(f"Email error: {str(e)}")  # Debug
+    
+    return redirect(url_for('reports'))
 
 # Route rimossa - Flask-Security-Too gestisce tutto automaticamente
 
