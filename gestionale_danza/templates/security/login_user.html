@@ -1,0 +1,48 @@
+{% extends "security/base.html" %}
+
+{% block security_content %}
+    <h4 class="text-center mb-4">Accesso al Sistema</h4>
+    
+    <form method="POST" action="{{ url_for_security('login') }}">
+        {{ login_user_form.hidden_tag() }}
+        
+        <div class="mb-3">
+            {{ login_user_form.email.label(class="form-label") }}
+            {{ login_user_form.email(class="form-control", placeholder="Inserisci la tua email") }}
+            {% if login_user_form.email.errors %}
+                <div class="text-danger small mt-1">
+                    {% for error in login_user_form.email.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3">
+            {{ login_user_form.password.label(class="form-label") }}
+            {{ login_user_form.password(class="form-control", placeholder="Password") }}
+            {% if login_user_form.password.errors %}
+                <div class="text-danger small mt-1">
+                    {% for error in login_user_form.password.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="mb-3 form-check">
+            {{ login_user_form.remember(class="form-check-input") }}
+            {{ login_user_form.remember.label(class="form-check-label") }}
+        </div>
+        
+        <div class="d-grid">
+            {{ login_user_form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+    
+    <div class="text-center mt-3">
+        <small class="text-muted">
+            Gestionale per Scuole di Danza
+        </small>
+    </div>
+{% endblock %}

@@ -4,7 +4,6 @@ from sqlalchemy import Column, Integer, String, Boolean, Float, DateTime, Foreig
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from datetime import datetime
-import bcrypt
 
 db = SQLAlchemy()
 Base = declarative_base()
@@ -15,18 +14,7 @@ clienti_corsi = Table('clienti_corsi', db.Model.metadata,
     Column('corso_id', Integer, ForeignKey('corsi.id'), primary_key=True)
 )
 
-class User(db.Model):
-    __tablename__ = 'users'
-    id = Column(Integer, primary_key=True)
-    username = Column(String(80), unique=True, nullable=False)
-    password_hash = Column(String(128), nullable=False)
-    
-    def set_password(self, password):
-        self.password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
-    
-    def check_password(self, password):
-        return bcrypt.checkpw(password.encode('utf-8'), self.password_hash.encode('utf-8'))
-
+from .user import User, Role, WebAuthn
 from .cliente import Cliente
 from .corso import Corso  
 from .insegnante import Insegnante

@@ -1,0 +1,230 @@
+{% extends "security/base.html" %}
+
+{% block security_content %}
+    <!-- DEBUG: Custom template loaded successfully -->
+    <div class="alert alert-success text-center mb-3">
+        <small><i class="bi bi-check-circle me-1"></i>Template personalizzato caricato!</small>
+    </div>
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-shield-check me-2"></i>
+                        Configurazione Autenticazione a Due Fattori
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if current_user.tf_primary_method %}
+                        <div class="alert alert-success">
+                            <h6><i class="bi bi-shield-fill-check me-2"></i>2FA Attivo</h6>
+                            <p class="mb-0">L'autenticazione a due fattori è attiva con il metodo: 
+                                <strong>
+                                    {% if current_user.tf_primary_method == 'authenticator' %}
+                                        App Authenticator
+                                    {% elif current_user.tf_primary_method == 'email' %}
+                                        Email
+                                    {% else %}
+                                        {{ current_user.tf_primary_method }}
+                                    {% endif %}
+                                </strong>
+                            </p>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-info-circle me-2"></i>Configura la Sicurezza</h6>
+                            <p class="mb-0">Aggiungi un ulteriore livello di sicurezza al tuo account configurando l'autenticazione a due fattori.</p>
+                        </div>
+                    {% endif %}
+                    
+                    {% if authr_qrcode %}
+                        <div class="alert alert-primary mb-4">
+                            <h6><i class="bi bi-qr-code me-2"></i>Scansiona il Codice QR</h6>
+                            <p class="mb-3">Apri la tua app authenticator (Google Authenticator, Authy, LastPass, etc.) e scansiona questo codice QR:</p>
+                            <div class="text-center bg-white p-3 rounded">
+                                <img alt="Codice QR per l'autenticazione a due fattori" src="{{ authr_qrcode }}" class="img-fluid" style="max-width: 200px;">
+                            </div>
+                        </div>
+                    {% endif %}
+                    
+                    {% if authr_key %}
+                        <div class="alert alert-warning mb-4">
+                            <h6><i class="bi bi-key me-2"></i>Codice Segreto Alternativo</h6>
+                            <p>Se non riesci a scansionare il QR, inserisci questo codice manualmente nella tua app authenticator:</p>
+                            <div class="text-center bg-light p-3 rounded">
+                                <code class="fs-5 fw-bold">{{ authr_key }}</code>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <strong>Istruzioni:</strong> Apri l'app → Aggiungi account → Inserimento manuale → Incolla questo codice
+                            </small>
+                        </div>
+                    {% endif %}
+                    
+                    <form method="POST" action="{{ url_for_security('two_factor_setup') }}">
+                        {{ two_factor_setup_form.hidden_tag() }}
+                        
+                        {% if not chosen_method %}
+                            <!-- Fase di selezione: mostra opzioni -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">{{ two_factor_setup_form.setup.label.text }}</label>
+                                {% if two_factor_setup_form.setup.__class__.__name__ == 'RadioField' %}
+                                    <div class="mt-3">
+                                        {% for choice in two_factor_setup_form.setup %}
+                                            <div class="form-check mb-3 p-3 border rounded">
+                                                {{ choice(class="form-check-input") }}
+                                                <label class="form-check-label" for="{{ choice.id }}">
+                                                    <strong>
+                                                        {% if choice.data == '' %}
+                                                            <i class="bi bi-shield-x text-secondary me-2"></i>Disabilita autenticazione a due fattori
+                                                        {% elif choice.data == 'email' %}
+                                                            <i class="bi bi-envelope text-primary me-2"></i>Configura utilizzando email
+                                                        {% elif choice.data == 'authenticator' %}
+                                                            <i class="bi bi-phone text-success me-2"></i>Configura utilizzando app authenticator
+                                                        {% elif choice.data == 'sms' %}
+                                                            <i class="bi bi-chat-dots text-info me-2"></i>Configura utilizzando SMS
+                                                        {% else %}
+                                                            {{ choice.label.text }}
+                                                        {% endif %}
+                                                    </strong>
+                                                    {% if choice.data == 'authenticator' %}
+                                                        <br><small class="text-muted">Google Authenticator, Authy, LastPass Authenticator, Microsoft Authenticator, etc.</small>
+                                                    {% elif choice.data == 'email' %}
+                                                        <br><small class="text-muted">Ricevi i codici di verifica via email</small>
+                                                    {% elif choice.data == 'sms' %}
+                                                        <br><small class="text-muted">Ricevi i codici di verifica via SMS</small>
+                                                    {% elif choice.data == '' %}
+                                                        <br><small class="text-muted">Rimuovi la protezione aggiuntiva dal tuo account</small>
+                                                    {% endif %}
+                                                </label>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <div class="input-group input-group-lg">
+                                        <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                        {{ two_factor_setup_form.setup(class="form-control text-center", placeholder="123456", maxlength="6", style="font-size: 1.5em; letter-spacing: 0.3em;") }}
+                                    </div>
+                                    <div class="form-text mt-2">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Inserisci il codice di 6 cifre dalla tua app authenticator
+                                    </div>
+                                {% endif %}
+                                
+                                {% if two_factor_setup_form.setup.errors %}
+                                    <div class="alert alert-danger mt-2">
+                                        {% for error in two_factor_setup_form.setup.errors %}
+                                            <div><i class="bi bi-exclamation-triangle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if two_factor_setup_form.phone %}
+                                <div class="mb-3" id="phone_field" style="display: none;">
+                                    <label class="form-label fw-bold">{{ two_factor_setup_form.phone.label.text }}</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-telephone"></i></span>
+                                        {{ two_factor_setup_form.phone(class="form-control", placeholder="+39 123 456 7890") }}
+                                    </div>
+                                    {% if two_factor_setup_form.phone.errors %}
+                                        <div class="alert alert-danger mt-2">
+                                            {% for error in two_factor_setup_form.phone.errors %}
+                                                <div><i class="bi bi-exclamation-triangle me-1"></i>{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Formato internazionale: +39 seguito dal numero
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            <div class="d-grid">
+                                {{ two_factor_setup_form.submit(class="btn btn-primary btn-lg", id="setup_submit_btn") }}
+                            </div>
+                        {% endif %}
+                    </form>
+                    
+                    {% if chosen_method %}
+                        <!-- Form separato per la verifica del codice -->
+                        <hr class="my-4">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-shield-check me-2"></i>Completa la Configurazione</h6>
+                            <p class="mb-0">Inserisci il codice di 6 cifre dalla tua app authenticator per completare la configurazione del 2FA</p>
+                        </div>
+                        
+                        {% if changing %}
+                            {% set faction = url_for_security('two_factor_setup_validate', token=state_token) %}
+                        {% else %}
+                            {% set faction = url_for_security('two_factor_token_validation') %}
+                        {% endif %}
+                        
+                        <form method="POST" action="{{ faction }}">
+                            {{ two_factor_verify_code_form.hidden_tag() }}
+                            
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">{{ two_factor_verify_code_form.code.label.text }}</label>
+                                <div class="input-group input-group-lg">
+                                    <span class="input-group-text"><i class="bi bi-shield-lock"></i></span>
+                                    {{ two_factor_verify_code_form.code(class="form-control text-center", placeholder="123456", maxlength="6", style="font-size: 1.5em; letter-spacing: 0.3em;") }}
+                                </div>
+                                <div class="form-text mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Inserisci il codice di 6 cifre dalla tua app authenticator
+                                </div>
+                                {% if two_factor_verify_code_form.code.errors %}
+                                    <div class="alert alert-danger mt-2">
+                                        {% for error in two_factor_verify_code_form.code.errors %}
+                                            <div><i class="bi bi-exclamation-triangle me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="d-grid">
+                                {{ two_factor_verify_code_form.submit(class="btn btn-success btn-lg", value="Completa Configurazione 2FA") }}
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-light text-center">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house me-1"></i>Torna alla Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    // Gestione visibilità campo telefono e auto-submit per authenticator
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneField = document.getElementById('phone_field');
+        const setupForm = document.querySelector('form[action*="two_factor_setup"]');
+        const submitBtn = document.getElementById('setup_submit_btn');
+        
+        function togglePhoneField() {
+            const selectedRadio = document.querySelector('input[name="setup"]:checked');
+            if (phoneField) {
+                phoneField.style.display = (selectedRadio && selectedRadio.value === 'sms') ? 'block' : 'none';
+            }
+        }
+        
+        document.querySelectorAll('input[name="setup"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                togglePhoneField();
+                
+                // Auto-submit for authenticator to generate QR code
+                if (this.value === 'authenticator') {
+                    setTimeout(() => {
+                        submitBtn.click();
+                    }, 100);
+                }
+            });
+        });
+        
+        togglePhoneField();
+    });
+    </script>
+{% endblock %}

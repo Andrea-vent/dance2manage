@@ -14,6 +14,7 @@ class Pagamento(db.Model):
     pagato = Column(Boolean, default=False)
     data_pagamento = Column(DateTime)
     data_creazione = Column(DateTime, default=datetime.now)
+    metodo_pagamento = Column(String(50), default='Contanti')  # Contanti, Bonifico, Bancomat, Carta di credito
     note = Column(String(500))
     
     # Chiavi esterne

@@ -1,7 +1,8 @@
 # models/corso.py
 from . import db, clienti_corsi
-from sqlalchemy import Column, Integer, String, ForeignKey, Time
+from sqlalchemy import Column, Integer, String, ForeignKey, Time, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime
 
 class Corso(db.Model):
     __tablename__ = 'corsi'
@@ -10,7 +11,9 @@ class Corso(db.Model):
     nome = Column(String(100), nullable=False)
     giorno = Column(String(20), nullable=False)  # Lunedì, Martedì, etc.
     orario = Column(Time, nullable=False)
+    costo_mensile = Column(Integer, default=50)  # Costo mensile del corso
     max_iscritti = Column(Integer, default=20)
+    data_creazione = Column(DateTime, default=datetime.now)
     
     # Chiave esterna verso Insegnante
     insegnante_id = Column(Integer, ForeignKey('insegnanti.id'), nullable=False)

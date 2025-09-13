@@ -1,0 +1,102 @@
+{% extends "security/base.html" %}
+
+{% block security_content %}
+    <h4 class="text-center mb-4">Configurazione Autenticazione a Due Fattori</h4>
+    
+    {% if current_user.tf_primary_method %}
+        <div class="alert alert-success mb-4">
+            <h6><i class="bi bi-shield-check me-2"></i>2FA Attivo</h6>
+            <p class="mb-0">L'autenticazione a due fattori è attiva con il metodo: <strong>{{ current_user.tf_primary_method }}</strong></p>
+        </div>
+    {% endif %}
+    
+    {% if qrcode %}
+        <div class="alert alert-info mb-4">
+            <h6><i class="bi bi-qr-code me-2"></i>Codice QR per App Authenticator</h6>
+            <p class="mb-3">Scansiona il codice QR con la tua app authenticator</p>
+            <div class="text-center">
+                {{ qrcode|safe }}
+            </div>
+        </div>
+    {% endif %}
+    
+    {% if tf_totp_secret %}
+        <div class="alert alert-warning mb-4">
+            <h6><i class="bi bi-key me-2"></i>Codice Segreto</h6>
+            <p>Se non riesci a scansionare il QR, inserisci questo codice manualmente nella tua app authenticator:</p>
+            <div class="text-center">
+                <code class="fs-6">{{ tf_totp_secret }}</code>
+            </div>
+        </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for_security('two_factor_setup') }}">
+        {{ two_factor_setup_form.hidden_tag() }}
+        
+        <div class="mb-4">
+            {{ two_factor_setup_form.setup.label(class="form-label") }}
+            {{ two_factor_setup_form.setup(class="form-control") }}
+            {% if two_factor_setup_form.setup.errors %}
+                <div class="text-danger small mt-1">
+                    {% for error in two_factor_setup_form.setup.errors %}
+                        <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+        
+        {% if two_factor_setup_form.phone %}
+            <div class="mb-3">
+                {{ two_factor_setup_form.phone.label(class="form-label") }}
+                {{ two_factor_setup_form.phone(class="form-control", placeholder="+39 123 456 7890") }}
+                {% if two_factor_setup_form.phone.errors %}
+                    <div class="text-danger small mt-1">
+                        {% for error in two_factor_setup_form.phone.errors %}
+                            <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        <div class="d-grid">
+            {{ two_factor_setup_form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+    
+    <div class="text-center mt-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-house me-1"></i>Torna alla Dashboard
+        </a>
+    </div>
+    
+    <script>
+    // Nascondi/mostra campo telefono in base alla selezione
+    document.addEventListener('DOMContentLoaded', function() {
+        const phoneField = document.querySelector('input[name="phone"]');
+        const phoneDiv = phoneField ? phoneField.closest('.mb-3') : null;
+        
+        function togglePhoneField() {
+            const selectedRadio = document.querySelector('input[name="setup"]:checked');
+            if (phoneDiv) {
+                if (selectedRadio && selectedRadio.value === 'sms') {
+                    phoneDiv.style.display = 'block';
+                } else {
+                    phoneDiv.style.display = 'none';
+                }
+            }
+        }
+        
+        // Nascondi campo telefono inizialmente
+        if (phoneDiv) phoneDiv.style.display = 'none';
+        
+        // Ascolta i cambiamenti nei radio button
+        document.querySelectorAll('input[name="setup"]').forEach(radio => {
+            radio.addEventListener('change', togglePhoneField);
+        });
+        
+        // Controlla selezione iniziale
+        togglePhoneField();
+    });
+    </script>
+{% endblock %}

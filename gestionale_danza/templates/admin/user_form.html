@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}{{ 'Modifica' if user else 'Nuovo' }} Utente - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-{{ 'gear' if user else 'plus' }} me-2"></i>{{ 'Modifica' if user else 'Nuovo' }} Utente</h1>
+            <a href="{{ url_for('gestione_utenti') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Torna alla Lista
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="bi bi-person-badge me-2"></i>
+                    {{ 'Modifica Utente: ' + user.email if user else 'Crea Nuovo Utente' }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <!-- Informazioni di Base -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Email *</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ user.email if user else '' }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="username" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="username" name="username" 
+                                   value="{{ user.username if user else '' }}">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="first_name" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="first_name" name="first_name" 
+                                   value="{{ user.first_name if user else '' }}">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="last_name" class="form-label">Cognome</label>
+                            <input type="text" class="form-control" id="last_name" name="last_name" 
+                                   value="{{ user.last_name if user else '' }}">
+                        </div>
+                    </div>
+
+                    <!-- Password -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label for="password" class="form-label">
+                                Password {{ '*' if not user else '(lascia vuoto per non modificare)' }}
+                            </label>
+                            <input type="password" class="form-control" id="password" name="password" 
+                                   {{ 'required' if not user else '' }}>
+                            {% if not user %}
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                La password deve essere sicura (minimo 8 caratteri)
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Ruoli -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label">Ruoli *</label>
+                            <div class="form-check-container">
+                                {% for role in roles %}
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" 
+                                           id="role_{{ role.name }}" name="roles" value="{{ role.name }}"
+                                           {% if user and role in user.roles %}checked{% endif %}>
+                                    <label class="form-check-label" for="role_{{ role.name }}">
+                                        <span class="badge bg-{{ 'danger' if role.name == 'admin' else 'primary' }} me-1">
+                                            {{ role.name.title() }}
+                                        </span>
+                                        {% if role.description %}
+                                        <small class="text-muted">- {{ role.description }}</small>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Seleziona almeno un ruolo. Gli admin hanno accesso completo al sistema.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Stato Account -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="active" name="active"
+                                       {% if not user or user.active %}checked{% endif %}>
+                                <label class="form-check-label" for="active">
+                                    <strong>Account Attivo</strong>
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Gli utenti inattivi non possono accedere al sistema
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if user %}
+                    <!-- Informazioni Aggiuntive per Modifica -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-info-circle me-2"></i>Informazioni Account</h6>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Creato:</strong> {{ user.created_at.strftime('%d/%m/%Y %H:%M') if user.created_at else 'N/A' }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Ultimo Accesso:</strong> {{ user.last_login_at.strftime('%d/%m/%Y %H:%M') if user.last_login_at else 'Mai' }}
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Numero Accessi:</strong> {{ user.login_count or 0 }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>2FA:</strong> 
+                                        {% if user.tf_primary_method %}
+                                            <span class="badge bg-success">{{ user.tf_primary_method }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">Non configurato</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Bottoni -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('gestione_utenti') }}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-circle me-1"></i>Annulla
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-1"></i>
+                            {{ 'Aggiorna Utente' if user else 'Crea Utente' }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Validazione form
+document.querySelector('form').addEventListener('submit', function(e) {
+    const roles = document.querySelectorAll('input[name="roles"]:checked');
+    if (roles.length === 0) {
+        e.preventDefault();
+        alert('Seleziona almeno un ruolo per l\'utente');
+    }
+});
+</script>
+{% endblock %}

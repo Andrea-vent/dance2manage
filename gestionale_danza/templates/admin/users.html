@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Gestione Utenti - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-people me-2"></i>Gestione Utenti</h1>
+            <a href="{{ url_for('nuovo_utente') }}" class="btn btn-primary">
+                <i class="bi bi-person-plus me-1"></i>Nuovo Utente
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                {% if users %}
+                <div class="table-responsive">
+                    <table class="table table-striped" id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Username</th>
+                                <th>Nome Completo</th>
+                                <th>Ruoli</th>
+                                <th>Stato</th>
+                                <th>Ultimo Accesso</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in users %}
+                            <tr>
+                                <td>{{ user.id }}</td>
+                                <td>{{ user.email }}</td>
+                                <td>{{ user.username or '-' }}</td>
+                                <td>{{ user.full_name or '-' }}</td>
+                                <td>
+                                    {% for role in user.roles %}
+                                        <span class="badge bg-{{ 'danger' if role.name == 'admin' else 'primary' }} me-1">
+                                            {{ role.name.title() }}
+                                        </span>
+                                    {% endfor %}
+                                </td>
+                                <td>
+                                    {% if user.active %}
+                                        <span class="badge bg-success">Attivo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inattivo</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if user.last_login_at %}
+                                        {{ user.last_login_at.strftime('%d/%m/%Y %H:%M') }}
+                                    {% else %}
+                                        <span class="text-muted">Mai</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="{{ url_for('modifica_utente', id=user.id) }}" 
+                                           class="btn btn-sm btn-outline-primary" title="Modifica">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        {% if user.id != current_user.id %}
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="confermaEliminazione('{{ user.email }}', {{ user.id }})" title="Elimina">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="bi bi-people display-4 d-block mb-2"></i>
+                    <p>Nessun utente trovato</p>
+                    <a href="{{ url_for('nuovo_utente') }}" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-1"></i>Crea Primo Utente
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal di conferma eliminazione -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Conferma Eliminazione</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Sei sicuro di voler eliminare l'utente <strong id="userEmailToDelete"></strong>?</p>
+                <p class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>Questa azione non può essere annullata.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <form method="POST" id="deleteForm" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Elimina Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function confermaEliminazione(userEmail, userId) {
+    document.getElementById('userEmailToDelete').textContent = userEmail;
+    document.getElementById('deleteForm').action = `/admin/users/${userId}/delete`;
+    new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+
+// Inizializza DataTable
+$(document).ready(function() {
+    $('#usersTable').DataTable({
+        language: {
+            url: '/static/js/DataTables-1.13.6/i18n/Italian.json'
+        },
+        order: [[0, 'desc']]
+    });
+});
+</script>
+{% endblock %}

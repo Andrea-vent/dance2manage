@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Profilo Utente - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-circle me-2"></i>Profilo Utente</h1>
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Torna alla Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Informazioni Account</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Email:</strong></div>
+                    <div class="col-sm-8">{{ user.email }}</div>
+                </div>
+                {% if user.username %}
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Username:</strong></div>
+                    <div class="col-sm-8">{{ user.username }}</div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Nome Completo:</strong></div>
+                    <div class="col-sm-8">{{ user.full_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Account Attivo:</strong></div>
+                    <div class="col-sm-8">
+                        {% if user.active %}
+                            <span class="badge bg-success">Attivo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Disattivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if user.roles %}
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Ruoli:</strong></div>
+                    <div class="col-sm-8">
+                        {% for role in user.roles %}
+                            <span class="badge bg-primary me-1">{{ role.name.title() }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-shield-check me-2"></i>Sicurezza Account</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Ultimo Accesso:</strong></div>
+                    <div class="col-sm-6">
+                        {% if user.last_login_at %}
+                            {{ user.last_login_at.strftime('%d/%m/%Y %H:%M') }}
+                        {% else %}
+                            <span class="text-muted">Mai</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>Numero Accessi:</strong></div>
+                    <div class="col-sm-6">{{ user.login_count or 0 }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6"><strong>2FA Attivo:</strong></div>
+                    <div class="col-sm-6">
+                        {% if user.tf_primary_method %}
+                            <span class="badge bg-success">Attivo ({{ user.tf_primary_method }})</span>
+                        {% else %}
+                            <span class="badge bg-warning">Non Configurato</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for_security('change_password') }}" class="btn btn-outline-primary">
+                        <i class="bi bi-key me-1"></i>Cambia Password
+                    </a>
+                    
+                    {% if config.SECURITY_TWO_FACTOR %}
+                        {% if user.tf_primary_method %}
+                            <a href="{{ url_for_security('two_factor_setup') }}" class="btn btn-outline-warning">
+                                <i class="bi bi-shield-exclamation me-1"></i>Gestisci 2FA
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for_security('two_factor_setup') }}" class="btn btn-outline-success">
+                                <i class="bi bi-shield-plus me-1"></i>Configura 2FA
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.last_login_ip %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Informazioni Sessione</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <strong>IP Ultimo Accesso:</strong> {{ user.last_login_ip }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>IP Accesso Corrente:</strong> {{ user.current_login_ip or 'N/A' }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

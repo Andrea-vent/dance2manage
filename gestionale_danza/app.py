@@ -7,7 +7,9 @@ from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
-from models import db, User, Cliente, Corso, Insegnante, Pagamento, Settings
+from flask_security import Security, SQLAlchemyUserDatastore, login_required as security_login_required, roles_required
+from flask_mailman import Mail
+from models import db, User, Role, WebAuthn, Cliente, Corso, Insegnante, Pagamento, Settings
 from utils.stampa_pdf import genera_ricevuta_pdf
 import tempfile
 
@@ -26,6 +28,46 @@ else:
 # Inizializza Flask
 app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
 app.secret_key = 'chiave-segreta-danza-2024'
+# app.config['DEBUG'] = True  # Disabled debug mode
+
+# Flask-Security-Too Configuration
+app.config['SECURITY_PASSWORD_SALT'] = 'danza-security-salt-2024'
+app.config['SECURITY_TWO_FACTOR_ENABLED_METHODS'] = ['email', 'authenticator']
+app.config['SECURITY_TWO_FACTOR'] = True
+app.config['SECURITY_TWO_FACTOR_RESCUE_EMAIL'] = 'admin@dance2manage.com'
+app.config['SECURITY_TWO_FACTOR_LOGIN_VALIDITY'] = '1 week'
+app.config['SECURITY_TWO_FACTOR_ALWAYS_VALIDATE'] = False
+app.config['SECURITY_CHANGEABLE'] = True
+app.config['SECURITY_SEND_REGISTER_EMAIL'] = False
+app.config['SECURITY_REGISTERABLE'] = False
+app.config['SECURITY_SEND_PASSWORD_CHANGE_EMAIL'] = False
+app.config['SECURITY_SEND_PASSWORD_RESET_EMAIL'] = False
+app.config['SECURITY_SEND_PASSWORD_RESET_NOTICE_EMAIL'] = False
+
+# Disable strict email validation
+app.config['SECURITY_EMAIL_VALIDATOR_ARGS'] = {'check_deliverability': False}
+app.config['SECURITY_LOGIN_WITHOUT_CONFIRMATION'] = True
+
+# TOTP Configuration for 2FA
+app.config['SECURITY_TOTP_SECRETS'] = {'1': 'dance2manage-secret-key-2024'}
+app.config['SECURITY_TOTP_ISSUER'] = 'Dance2Manage'
+app.config['SECURITY_TWO_FACTOR_REQUIRED'] = False  # Make 2FA optional
+
+# QR Code configuration - ensure all required libraries are available  
+app.config['SECURITY_TWO_FACTOR_AUTHENTICATOR_VALIDITY'] = 120  # 2 minutes
+app.config['SECURITY_TWO_FACTOR_EMAIL_VALIDITY'] = 300  # 5 minutes
+
+# Force disable SMS to simplify setup
+app.config['SECURITY_TWO_FACTOR_ENABLED_METHODS'] = ['email', 'authenticator']  # Remove SMS
+app.config['SECURITY_TWO_FACTOR_SMS_SERVICE'] = None
+
+# Disable all email features to avoid connection errors
+app.config['SECURITY_EMAIL_SENDER'] = 'noreply@dance2manage.com'
+app.config['MAIL_SUPPRESS_SEND'] = True
+
+# Configure Flask-Security to use custom templates
+app.config['SECURITY_TEMPLATE_DIRECTORY'] = template_folder
+app.config['SECURITY_TWO_FACTOR_VERIFY_CODE_TEMPLATE'] = 'security/two_factor_verify_code.html'
 
 # Configurazione database SQLite
 database_path = os.path.join(base_path, 'data', 'database.db')
@@ -36,6 +78,13 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # Inizializza database
 db.init_app(app)
 
+# Setup Flask-Security-Too (standard)
+user_datastore = SQLAlchemyUserDatastore(db, User, Role)
+security = Security(app, user_datastore)
+
+# Initialize Mail
+mail = Mail(app)
+
 # Crea cartelle necessarie
 pdf_folder = os.path.join(base_path, 'pdf_ricevute')
 os.makedirs(pdf_folder, exist_ok=True)
@@ -45,51 +94,148 @@ def init_db():
     with app.app_context():
         db.create_all()
         
+        # Crea ruolo admin se non esiste
+        if not user_datastore.find_role('admin'):
+            user_datastore.create_role(name='admin', description='Administrator')
+        
+        # Crea ruolo user se non esiste  
+        if not user_datastore.find_role('user'):
+            user_datastore.create_role(name='user', description='Standard User')
+        
         # Crea utente admin se non esiste
-        if not User.query.filter_by(username='admin').first():
-            admin = User(username='admin')
-            admin.set_password('admin123')
-            db.session.add(admin)
-            db.session.commit()
+        if not user_datastore.find_user(email='admin@dance2manage.com'):
+            admin = user_datastore.create_user(
+                email='admin@dance2manage.com',
+                username='admin',
+                password=generate_password_hash('admin123'),
+                active=True,
+                first_name='Admin',
+                last_name='User'
+            )
+            user_datastore.add_role_to_user(admin, 'admin')
+        
+        db.session.commit()
 
-def login_required(f):
-    """Decorator per richiedere autenticazione"""
-    from functools import wraps
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'user_id' not in session:
-            return redirect(url_for('login'))
-        return f(*args, **kwargs)
-    return decorated_function
+# Use Flask-Security login_required decorator
+from flask_security import login_required
 
 # ROUTES
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        
-        user = User.query.filter_by(username=username).first()
-        
-        if user and user.check_password(password):
-            session['user_id'] = user.id
-            session['username'] = user.username
-            flash('Accesso effettuato con successo!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Credenziali non valide', 'error')
-    
-    return render_template('login.html')
+# Flask-Security will handle login/logout automatically
+# Remove custom login routes since Flask-Security provides them
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash('Disconnessione effettuata', 'info')
-    return redirect(url_for('login'))
+# Redirect root to security login
+@app.route('/login')
+def custom_login():
+    return redirect(url_for('security.login'))
+
+@app.route('/logout')  
+def custom_logout():
+    return redirect(url_for('security.logout'))
+
+@app.route('/profile')
+@login_required
+def user_profile():
+    """Pagina profilo utente"""
+    from flask_security import current_user
+    return render_template('security/user_profile.html', user=current_user)
+
+@app.route('/admin/users')
+@login_required
+@roles_required('admin')
+def gestione_utenti():
+    """Pagina gestione utenti per admin"""
+    users = User.query.all()
+    roles = Role.query.all()
+    return render_template('admin/users.html', users=users, roles=roles)
+
+@app.route('/admin/users/new', methods=['GET', 'POST'])
+@login_required
+@roles_required('admin')
+def nuovo_utente():
+    """Crea nuovo utente"""
+    if request.method == 'POST':
+        from flask_security.utils import hash_password
+        
+        user = user_datastore.create_user(
+            email=request.form['email'],
+            username=request.form.get('username'),
+            password=hash_password(request.form['password']),
+            active=request.form.get('active') == 'on',
+            first_name=request.form.get('first_name', ''),
+            last_name=request.form.get('last_name', '')
+        )
+        
+        # Assegna ruoli
+        selected_roles = request.form.getlist('roles')
+        for role_name in selected_roles:
+            role = user_datastore.find_role(role_name)
+            if role:
+                user_datastore.add_role_to_user(user, role)
+        
+        user_datastore.commit()
+        flash('Utente creato con successo!', 'success')
+        return redirect(url_for('gestione_utenti'))
+    
+    roles = Role.query.all()
+    return render_template('admin/user_form.html', user=None, roles=roles)
+
+@app.route('/admin/users/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@roles_required('admin')
+def modifica_utente(id):
+    """Modifica utente esistente"""
+    user = User.query.get_or_404(id)
+    
+    if request.method == 'POST':
+        from flask_security.utils import hash_password
+        
+        user.email = request.form['email']
+        user.username = request.form.get('username')
+        user.first_name = request.form.get('first_name', '')
+        user.last_name = request.form.get('last_name', '')
+        user.active = request.form.get('active') == 'on'
+        
+        # Cambia password solo se fornita
+        if request.form.get('password'):
+            user.password = hash_password(request.form['password'])
+        
+        # Aggiorna ruoli
+        user.roles = []
+        selected_roles = request.form.getlist('roles')
+        for role_name in selected_roles:
+            role = user_datastore.find_role(role_name)
+            if role:
+                user_datastore.add_role_to_user(user, role)
+        
+        user_datastore.commit()
+        flash('Utente aggiornato con successo!', 'success')
+        return redirect(url_for('gestione_utenti'))
+    
+    roles = Role.query.all()
+    return render_template('admin/user_form.html', user=user, roles=roles)
+
+@app.route('/admin/users/<int:id>/delete', methods=['POST'])
+@login_required
+@roles_required('admin')
+def elimina_utente(id):
+    """Elimina utente"""
+    from flask_security import current_user
+    
+    user = User.query.get_or_404(id)
+    
+    # Non permettere di eliminare se stesso
+    if user.id == current_user.id:
+        flash('Non puoi eliminare il tuo stesso account!', 'error')
+        return redirect(url_for('gestione_utenti'))
+    
+    user_datastore.delete_user(user)
+    user_datastore.commit()
+    flash('Utente eliminato con successo!', 'success')
+    return redirect(url_for('gestione_utenti'))
 
 @app.route('/')
-@login_required
+@login_required  
 def dashboard():
     # Statistiche dashboard
     total_clienti = Cliente.query.filter_by(attivo=True).count()
@@ -812,6 +958,8 @@ def genera_pdf_compensi_insegnante(insegnante_id):
     except Exception as e:
         flash(f'Errore durante generazione PDF: {str(e)}', 'error')
         return redirect(url_for('reports'))
+
+# Route rimossa - Flask-Security-Too gestisce tutto automaticamente
 
 if __name__ == '__main__':
     init_db()
