@@ -49,8 +49,9 @@ def genera_pdf_weasyprint(context, pdf_path):
         
         # Aggiungi il path assoluto del logo al context per WeasyPrint
         if context.get('settings') and context['settings'].logo_filename:
-            logo_absolute_path = os.path.abspath(os.path.join('static', 'uploads', context['settings'].logo_filename))
-            context['logo_absolute_path'] = f"file://{logo_absolute_path}"
+            # Usa la stessa logica dei report
+            logo_absolute_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', context['settings'].logo_filename)
+            context['logo_absolute_path'] = f"file://{os.path.abspath(logo_absolute_path)}"
         
         # Render del template HTML
         html_content = render_template('ricevuta.html', **context)
@@ -329,7 +330,7 @@ def genera_pdf_reportlab(pagamento, pdf_path, ricevuta_numero):
         
         # Informazioni pagamento
         info_pagamento = [
-            f"<b>Metodo di pagamento:</b> Contanti",
+            f"<b>Metodo di pagamento:</b> {getattr(pagamento, 'metodo_pagamento', 'Contanti')}",
             f"<b>Data pagamento:</b> {pagamento.data_pagamento.strftime('%d/%m/%Y') if pagamento.data_pagamento else 'N/A'}",
             f"<b>Stato:</b> {'✓ Pagato' if pagamento.pagato else '⚠ Non pagato'}"
         ]

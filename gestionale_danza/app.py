@@ -5,6 +5,7 @@ import shutil
 import zipfile
 from datetime import datetime, date
 from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file, jsonify
+from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from models import db, User, Cliente, Corso, Insegnante, Pagamento, Settings
 from utils.stampa_pdf import genera_ricevuta_pdf
@@ -160,6 +161,12 @@ def nuovo_cliente():
     corsi = Corso.query.all()
     return render_template('cliente_form.html', cliente=None, corsi=corsi)
 
+@app.route('/clienti/<int:id>')
+@login_required
+def dettagli_cliente(id):
+    cliente = Cliente.query.get_or_404(id)
+    return render_template('cliente_view.html', cliente=cliente)
+
 @app.route('/clienti/<int:id>/modifica', methods=['GET', 'POST'])
 @login_required
 def modifica_cliente(id):
@@ -227,6 +234,12 @@ def nuovo_corso():
     insegnanti = Insegnante.query.all()
     return render_template('corso_form.html', corso=None, insegnanti=insegnanti)
 
+@app.route('/corsi/<int:id>')
+@login_required
+def dettagli_corso(id):
+    corso = Corso.query.get_or_404(id)
+    return render_template('corso_view.html', corso=corso)
+
 @app.route('/corsi/<int:id>/modifica', methods=['GET', 'POST'])
 @login_required
 def modifica_corso(id):
@@ -288,6 +301,12 @@ def nuovo_insegnante():
         return redirect(url_for('insegnanti'))
     
     return render_template('insegnante_form.html', insegnante=None)
+
+@app.route('/insegnanti/<int:id>')
+@login_required
+def dettagli_insegnante(id):
+    insegnante = Insegnante.query.get_or_404(id)
+    return render_template('insegnante_view.html', insegnante=insegnante)
 
 @app.route('/insegnanti/<int:id>/modifica', methods=['GET', 'POST'])
 @login_required
@@ -365,6 +384,7 @@ def nuovo_pagamento():
             importo=float(request.form['importo']),
             cliente_id=int(request.form['cliente_id']),
             corso_id=int(request.form['corso_id']),
+            metodo_pagamento=request.form.get('metodo_pagamento', 'Contanti'),
             note=request.form.get('note', '')
         )
         db.session.add(pagamento)
@@ -374,7 +394,11 @@ def nuovo_pagamento():
     
     clienti = Cliente.query.filter_by(attivo=True).all()
     corsi = Corso.query.all()
-    return render_template('pagamento_form.html', pagamento=None, clienti=clienti, corsi=corsi)
+    corso_preselezionato = request.args.get('corso_id', type=int)
+    mese_corrente = datetime.now().month
+    anno_corrente = datetime.now().year
+    return render_template('pagamento_form.html', pagamento=None, clienti=clienti, corsi=corsi, 
+                         corso_preselezionato=corso_preselezionato, mese_corrente=mese_corrente, anno_corrente=anno_corrente)
 
 @app.route('/pagamenti/<int:id>/modifica', methods=['GET', 'POST'])
 @login_required
@@ -387,6 +411,7 @@ def modifica_pagamento(id):
         pagamento.importo = float(request.form['importo'])
         pagamento.cliente_id = int(request.form['cliente_id'])
         pagamento.corso_id = int(request.form['corso_id'])
+        pagamento.metodo_pagamento = request.form.get('metodo_pagamento', 'Contanti')
         pagamento.note = request.form.get('note', '')
         
         # Gestione stato pagamento

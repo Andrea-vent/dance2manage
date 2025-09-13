@@ -40,7 +40,7 @@
                                 <option value="">Seleziona corso...</option>
                                 {% for corso in corsi %}
                                 <option value="{{ corso.id }}" 
-                                        {% if pagamento and pagamento.corso_id == corso.id %}selected{% endif %}>
+                                        {% if (pagamento and pagamento.corso_id == corso.id) or (corso_preselezionato and corso_preselezionato == corso.id) %}selected{% endif %}>
                                     {{ corso.nome }} ({{ corso.giorno }} {{ corso.orario.strftime('%H:%M') }})
                                 </option>
                                 {% endfor %}
@@ -61,7 +61,7 @@
                             <select class="form-select" id="mese" name="mese" required>
                                 {% for i in range(1, 13) %}
                                 {% set mesi = ['', 'Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'] %}
-                                <option value="{{ i }}" {% if (pagamento and pagamento.mese == i) or (not pagamento and i == (moment().month if moment else 1)) %}selected{% endif %}>
+                                <option value="{{ i }}" {% if (pagamento and pagamento.mese == i) or (not pagamento and mese_corrente and i == mese_corrente) %}selected{% endif %}>
                                     {{ mesi[i] }}
                                 </option>
                                 {% endfor %}
@@ -71,7 +71,7 @@
                             <label for="anno" class="form-label">Anno *</label>
                             <select class="form-select" id="anno" name="anno" required>
                                 {% for anno in range(2020, 2030) %}
-                                <option value="{{ anno }}" {% if (pagamento and pagamento.anno == anno) or (not pagamento and anno == (moment().year if moment else 2024)) %}selected{% endif %}>
+                                <option value="{{ anno }}" {% if (pagamento and pagamento.anno == anno) or (not pagamento and anno_corrente and anno == anno_corrente) %}selected{% endif %}>
                                     {{ anno }}
                                 </option>
                                 {% endfor %}
@@ -86,6 +86,17 @@
                                        step="0.01" min="0" required>
                             </div>
                         </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="metodo_pagamento" class="form-label">Metodo di Pagamento</label>
+                        <select class="form-select" id="metodo_pagamento" name="metodo_pagamento">
+                            <option value="Contanti" {% if not pagamento or (pagamento and pagamento.metodo_pagamento == 'Contanti') %}selected{% endif %}>Contanti</option>
+                            <option value="Bonifico" {% if pagamento and pagamento.metodo_pagamento == 'Bonifico' %}selected{% endif %}>Bonifico Bancario</option>
+                            <option value="Bancomat" {% if pagamento and pagamento.metodo_pagamento == 'Bancomat' %}selected{% endif %}>Bancomat/POS</option>
+                            <option value="Carta di credito" {% if pagamento and pagamento.metodo_pagamento == 'Carta di credito' %}selected{% endif %}>Carta di Credito</option>
+                            <option value="Altro" {% if pagamento and pagamento.metodo_pagamento == 'Altro' %}selected{% endif %}>Altro</option>
+                        </select>
                     </div>
 
                     {% if pagamento %}
