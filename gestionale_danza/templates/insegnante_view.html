@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+
+{% block title %}{{ insegnante.nome_completo }} - Dettagli Insegnante - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-workspace me-2"></i>Dettagli Insegnante</h1>
+            <div>
+                <a href="{{ url_for('insegnanti') }}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left me-1"></i>Torna alla Lista
+                </a>
+                <a href="{{ url_for('modifica_insegnante', id=insegnante.id) }}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-1"></i>Modifica
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informazioni Anagrafiche -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Informazioni Anagrafiche</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Nome:</strong></div>
+                    <div class="col-sm-8">{{ insegnante.nome }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Cognome:</strong></div>
+                    <div class="col-sm-8">{{ insegnante.cognome }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Codice Fiscale:</strong></div>
+                    <div class="col-sm-8">
+                        {{ insegnante.codice_fiscale or 'Non specificato' }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Percentuale Guadagno:</strong></div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-primary">{{ insegnante.percentuale_guadagno }}%</span>
+                    </div>
+                </div>
+                <!-- La data di assunzione non è disponibile nel modello -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Contatti e Indirizzo -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Contatti e Indirizzo</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Telefono:</strong></div>
+                    <div class="col-sm-8">
+                        {% if insegnante.telefono %}
+                            <a href="tel:{{ insegnante.telefono }}">{{ insegnante.telefono }}</a>
+                        {% else %}
+                            <span class="text-muted">Non specificato</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Email:</strong></div>
+                    <div class="col-sm-8">
+                        {% if insegnante.email %}
+                            <a href="mailto:{{ insegnante.email }}">{{ insegnante.email }}</a>
+                        {% else %}
+                            <span class="text-muted">Non specificata</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Indirizzo:</strong></div>
+                    <div class="col-sm-8">
+                        {% if insegnante.via or insegnante.civico or insegnante.cap or insegnante.citta %}
+                            {% if insegnante.via %}{{ insegnante.via }}{% endif %}
+                            {% if insegnante.civico %} {{ insegnante.civico }}{% endif %}
+                            {% if insegnante.via or insegnante.civico %}<br>{% endif %}
+                            {% if insegnante.cap %}{{ insegnante.cap }} {% endif %}
+                            {% if insegnante.citta %}{{ insegnante.citta }}{% endif %}
+                            {% if insegnante.provincia %} ({{ insegnante.provincia }}){% endif %}
+                        {% else %}
+                            <span class="text-muted">Non specificato</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if insegnante.note %}
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Note:</strong></div>
+                    <div class="col-sm-8">{{ insegnante.note }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Corsi Assegnati -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Corsi Assegnati</h5>
+            </div>
+            <div class="card-body">
+                {% if insegnante.corsi %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Nome Corso</th>
+                                <th>Giorno</th>
+                                <th>Orario</th>
+                                <th>Costo Mensile</th>
+                                <th>Iscritti</th>
+                                <th>Guadagno/Mese</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for corso in insegnante.corsi %}
+                            <tr>
+                                <td><strong>{{ corso.nome }}</strong></td>
+                                <td>{{ corso.giorno }}</td>
+                                <td>{{ corso.orario.strftime('%H:%M') }}</td>
+                                <td>€ {{ "%.2f"|format(corso.costo_mensile) }}</td>
+                                <td>{{ corso.pagamenti|length }} iscritti</td>
+                                <td>
+                                    {% set guadagno = (corso.costo_mensile * corso.pagamenti|length * insegnante.percentuale_guadagno / 100) %}
+                                    <strong>€ {{ "%.2f"|format(guadagno) }}</strong>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('dettagli_corso', id=corso.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Visualizza Corso">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Riepilogo Guadagni -->
+                <div class="mt-4 p-3 bg-light rounded">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted mb-1">Numero Corsi</h6>
+                                <h4 class="text-primary">{{ insegnante.corsi|length }}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted mb-1">Totale Studenti</h6>
+                                <h4 class="text-success">
+                                    {% set totale_studenti = 0 %}
+                                    {% for corso in insegnante.corsi %}
+                                        {% set totale_studenti = totale_studenti + corso.pagamenti|length %}
+                                    {% endfor %}
+                                    {{ totale_studenti }}
+                                </h4>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h6 class="text-muted mb-1">Guadagno Mensile Stimato</h6>
+                                <h4 class="text-warning">
+                                    {% set guadagno_totale = 0 %}
+                                    {% for corso in insegnante.corsi %}
+                                        {% set guadagno_totale = guadagno_totale + (corso.costo_mensile * corso.pagamenti|length * insegnante.percentuale_guadagno / 100) %}
+                                    {% endfor %}
+                                    €{{ "%.2f"|format(guadagno_totale) }}
+                                </h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="bi bi-calendar-x display-4 d-block mb-2"></i>
+                    <p>Nessun corso assegnato a questo insegnante</p>
+                    <a href="{{ url_for('nuovo_corso') }}" class="btn btn-primary">
+                        <i class="bi bi-plus me-1"></i>Crea Nuovo Corso
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

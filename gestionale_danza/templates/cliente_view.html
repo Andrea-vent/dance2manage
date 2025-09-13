@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+
+{% block title %}{{ cliente.nome_completo }} - Dettagli Cliente - Dance2Manage{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-person-fill me-2"></i>Dettagli Cliente</h1>
+            <div>
+                <a href="{{ url_for('clienti') }}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-arrow-left me-1"></i>Torna alla Lista
+                </a>
+                <a href="{{ url_for('modifica_cliente', id=cliente.id) }}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-1"></i>Modifica
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informazioni Anagrafiche -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-person-badge me-2"></i>Informazioni Anagrafiche</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Nome:</strong></div>
+                    <div class="col-sm-8">{{ cliente.nome }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Cognome:</strong></div>
+                    <div class="col-sm-8">{{ cliente.cognome }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Data di Nascita:</strong></div>
+                    <div class="col-sm-8">
+                        {% if cliente.data_nascita %}
+                            {{ cliente.data_nascita.strftime('%d/%m/%Y') }}
+                        {% else %}
+                            <span class="text-muted">Non specificata</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Codice Fiscale:</strong></div>
+                    <div class="col-sm-8">
+                        {{ cliente.codice_fiscale or 'Non specificato' }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Stato:</strong></div>
+                    <div class="col-sm-8">
+                        {% if cliente.attivo %}
+                            <span class="badge bg-success">Attivo</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Inattivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <!-- La data di registrazione non è disponibile nel modello -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Contatti e Indirizzo -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-telephone me-2"></i>Contatti e Indirizzo</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Telefono:</strong></div>
+                    <div class="col-sm-8">
+                        {% if cliente.telefono %}
+                            <a href="tel:{{ cliente.telefono }}">{{ cliente.telefono }}</a>
+                        {% else %}
+                            <span class="text-muted">Non specificato</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Email:</strong></div>
+                    <div class="col-sm-8">
+                        {% if cliente.email %}
+                            <a href="mailto:{{ cliente.email }}">{{ cliente.email }}</a>
+                        {% else %}
+                            <span class="text-muted">Non specificata</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Indirizzo:</strong></div>
+                    <div class="col-sm-8">
+                        {% if cliente.via or cliente.civico or cliente.cap or cliente.citta %}
+                            {% if cliente.via %}{{ cliente.via }}{% endif %}
+                            {% if cliente.civico %} {{ cliente.civico }}{% endif %}
+                            {% if cliente.via or cliente.civico %}<br>{% endif %}
+                            {% if cliente.cap %}{{ cliente.cap }} {% endif %}
+                            {% if cliente.citta %}{{ cliente.citta }}{% endif %}
+                            {% if cliente.provincia %} ({{ cliente.provincia }}){% endif %}
+                        {% else %}
+                            <span class="text-muted">Non specificato</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if cliente.note %}
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Note:</strong></div>
+                    <div class="col-sm-8">{{ cliente.note }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Storico Pagamenti -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Storico Pagamenti</h5>
+            </div>
+            <div class="card-body">
+                {% if cliente.pagamenti %}
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Periodo</th>
+                                <th>Corso</th>
+                                <th>Importo</th>
+                                <th>Metodo</th>
+                                <th>Stato</th>
+                                <th>Data Pagamento</th>
+                                <th>Azioni</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pagamento in cliente.pagamenti %}
+                            <tr>
+                                <td>{{ pagamento.periodo }}</td>
+                                <td>{{ pagamento.corso.nome }}</td>
+                                <td>€ {{ "%.2f"|format(pagamento.importo) }}</td>
+                                <td>{{ pagamento.metodo_pagamento or 'Contanti' }}</td>
+                                <td>
+                                    {% if pagamento.pagato %}
+                                        <span class="badge bg-success">Pagato</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Non pagato</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pagamento.data_pagamento %}
+                                        {{ pagamento.data_pagamento.strftime('%d/%m/%Y') }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if pagamento.pagato %}
+                                    <a href="{{ url_for('genera_ricevuta', id=pagamento.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" title="Genera Ricevuta">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </a>
+                                    {% endif %}
+                                    <a href="{{ url_for('modifica_pagamento', id=pagamento.id) }}" 
+                                       class="btn btn-sm btn-outline-secondary ms-1" title="Modifica">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="bi bi-inbox display-4 d-block mb-2"></i>
+                    <p>Nessun pagamento registrato per questo cliente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
