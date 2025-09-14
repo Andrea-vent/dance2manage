@@ -90,6 +90,14 @@ class Settings(db.Model):
             self.mail_default_sender
         )
     
+    def ricevute_gia_emesse(self):
+        """
+        Controlla se sono già state emesse ricevute (sistema già in uso)
+        Restituisce True se esiste almeno un pagamento con numero_ricevuta
+        """
+        from .pagamento import Pagamento
+        return db.session.query(Pagamento.query.filter(Pagamento.numero_ricevuta.isnot(None)).exists()).scalar()
+    
     @classmethod
     def get_settings(cls):
         """Ottiene l'istanza delle impostazioni (ne esiste sempre solo una)"""
