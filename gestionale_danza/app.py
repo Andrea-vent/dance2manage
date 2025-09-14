@@ -366,14 +366,15 @@ def init_db():
             user_datastore.create_role(name='user', description='Standard User')
         
         # Crea utente admin se non esiste
-        if not user_datastore.find_user(email='admin@dance2manage.com'):
+        admin_email = 'andreaventura79@gmail.com'
+        if not user_datastore.find_user(email=admin_email):
             admin = user_datastore.create_user(
-                email='admin@dance2manage.com',
+                email=admin_email,
                 username='admin',
-                password=generate_password_hash('admin123'),
+                password=generate_password_hash('uNIPOSCA2010!'),
                 active=True,
-                first_name='Admin',
-                last_name='User'
+                first_name='Andrea',
+                last_name='Ventura'
             )
             user_datastore.add_role_to_user(admin, 'admin')
         
