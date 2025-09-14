@@ -618,34 +618,108 @@ def elimina_insegnante(id):
 @app.route('/pagamenti')
 @login_required
 def pagamenti():
-    mese = request.args.get('mese', date.today().month, type=int)
-    anno = request.args.get('anno', date.today().year, type=int)
+    # Parametri di filtro esistenti
+    mese = request.args.get('mese', type=int)
+    anno = request.args.get('anno', type=int) 
     cliente_id = request.args.get('cliente_id', type=int)
     corso_id = request.args.get('corso_id', type=int)
     
-    query = Pagamento.query
+    # Nuovi parametri per ricerca, ordinamento e paginazione
+    search = request.args.get('search', '')
+    stato = request.args.get('stato', 'tutti')  # tutti, pagati, non_pagati
+    sort_by = request.args.get('sort_by', 'data_creazione')
+    sort_order = request.args.get('sort_order', 'desc')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 25, type=int)
     
+    # Validazioni
+    if per_page not in [10, 25, 50]:
+        per_page = 25
+    if sort_order not in ['asc', 'desc']:
+        sort_order = 'desc'
+    
+    # Campi ordinabili
+    valid_sort_fields = ['periodo', 'cliente', 'corso', 'importo', 'stato', 'data_pagamento', 'data_creazione']
+    if sort_by not in valid_sort_fields:
+        sort_by = 'data_creazione'
+    
+    # Query base con join per ricerca
+    query = Pagamento.query.join(Cliente).join(Corso)
+    
+    # Filtri esistenti
     if mese:
-        query = query.filter_by(mese=mese)
+        query = query.filter(Pagamento.mese == mese)
     if anno:
-        query = query.filter_by(anno=anno)
+        query = query.filter(Pagamento.anno == anno)
     if cliente_id:
-        query = query.filter_by(cliente_id=cliente_id)
+        query = query.filter(Pagamento.cliente_id == cliente_id)
     if corso_id:
-        query = query.filter_by(corso_id=corso_id)
+        query = query.filter(Pagamento.corso_id == corso_id)
     
-    pagamenti = query.all()
-    clienti = Cliente.query.filter_by(attivo=True).all()
-    corsi = Corso.query.all()
+    # Ricerca live
+    if search:
+        query = query.filter(
+            (Cliente.nome.contains(search)) | 
+            (Cliente.cognome.contains(search)) |
+            (Corso.nome.contains(search)) |
+            (Pagamento.metodo_pagamento.contains(search)) |
+            (Pagamento.note.contains(search))
+        )
+    
+    # Filtro stato pagamento
+    if stato == 'pagati':
+        query = query.filter(Pagamento.pagato == True)
+    elif stato == 'non_pagati':
+        query = query.filter(Pagamento.pagato == False)
+    
+    # Ordinamento dinamico
+    if sort_by == 'periodo':
+        sort_column = Pagamento.anno.desc() if sort_order == 'desc' else Pagamento.anno.asc()
+        query = query.order_by(sort_column, Pagamento.mese.desc() if sort_order == 'desc' else Pagamento.mese.asc())
+    elif sort_by == 'cliente':
+        sort_column = Cliente.cognome.desc() if sort_order == 'desc' else Cliente.cognome.asc()
+        query = query.order_by(sort_column, Cliente.nome)
+    elif sort_by == 'corso':
+        sort_column = Corso.nome.desc() if sort_order == 'desc' else Corso.nome.asc()
+        query = query.order_by(sort_column)
+    elif sort_by == 'importo':
+        sort_column = Pagamento.importo.desc() if sort_order == 'desc' else Pagamento.importo.asc()
+        query = query.order_by(sort_column)
+    elif sort_by == 'stato':
+        sort_column = Pagamento.pagato.desc() if sort_order == 'desc' else Pagamento.pagato.asc()
+        query = query.order_by(sort_column)
+    elif sort_by == 'data_pagamento':
+        sort_column = Pagamento.data_pagamento.desc() if sort_order == 'desc' else Pagamento.data_pagamento.asc()
+        query = query.order_by(sort_column)
+    else:  # data_creazione (default)
+        sort_column = Pagamento.data_creazione.desc() if sort_order == 'desc' else Pagamento.data_creazione.asc()
+        query = query.order_by(sort_column)
+    
+    # Paginazione
+    pagamenti_paginated = query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    
+    # Dati per select
+    clienti = Cliente.query.filter_by(attivo=True).order_by(Cliente.cognome, Cliente.nome).all()
+    corsi = Corso.query.order_by(Corso.nome).all()
     
     return render_template('pagamenti.html', 
-                         pagamenti=pagamenti, 
+                         pagamenti=pagamenti_paginated.items,
+                         pagamenti_paginated=pagamenti_paginated,
                          clienti=clienti, 
                          corsi=corsi,
                          mese_filtro=mese,
                          anno_filtro=anno,
                          cliente_filtro=cliente_id,
-                         corso_filtro=corso_id)
+                         corso_filtro=corso_id,
+                         search=search,
+                         stato=stato,
+                         sort_by=sort_by,
+                         sort_order=sort_order,
+                         per_page=per_page)
 
 @app.route('/pagamenti/nuovo', methods=['GET', 'POST'])
 @login_required

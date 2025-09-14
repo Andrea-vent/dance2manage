@@ -19,7 +19,32 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <form method="GET" class="row g-3">
+                <form method="GET" class="row g-3" id="searchForm">
+                    <!-- Prima riga: Ricerca Live e Stato -->
+                    <div class="col-md-6">
+                        <label for="search" class="form-label">Ricerca Live</label>
+                        <input type="text" class="form-control" id="searchLive" 
+                               value="{{ search }}" placeholder="Cliente, corso, metodo pagamento, note...">
+                        <input type="hidden" id="search" name="search" value="{{ search }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="stato" class="form-label">Stato Pagamento</label>
+                        <select class="form-select" id="stato" name="stato">
+                            <option value="tutti" {% if stato == 'tutti' %}selected{% endif %}>Tutti</option>
+                            <option value="pagati" {% if stato == 'pagati' %}selected{% endif %}>Solo Pagati</option>
+                            <option value="non_pagati" {% if stato == 'non_pagati' %}selected{% endif %}>Solo Non Pagati</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="per_page" class="form-label">Elementi per pagina</label>
+                        <select class="form-select" id="per_page" name="per_page" onchange="changePagination()">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Seconda riga: Filtri esistenti -->
                     <div class="col-md-2">
                         <label for="mese" class="form-label">Mese</label>
                         <select class="form-select" id="mese" name="mese">
@@ -71,6 +96,11 @@
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- Campi hidden per mantenere stato -->
+                    <input type="hidden" name="page" value="1">
+                    <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                    <input type="hidden" name="sort_order" value="{{ sort_order }}">
                 </form>
             </div>
         </div>
@@ -83,7 +113,7 @@
     <div class="col-md-4">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
-                <h4>€{{ "%.2f"|format(pagamenti|selectattr('pagato')|map(attribute='importo')|sum) }}</h4>
+                <h4>{{ (pagamenti|selectattr('pagato')|map(attribute='importo')|sum)|euro }}</h4>
                 <p class="mb-0">Incassato</p>
             </div>
         </div>
@@ -91,7 +121,7 @@
     <div class="col-md-4">
         <div class="card bg-danger text-white">
             <div class="card-body text-center">
-                <h4>€{{ "%.2f"|format(pagamenti|rejectattr('pagato')|map(attribute='importo')|sum) }}</h4>
+                <h4>{{ (pagamenti|rejectattr('pagato')|map(attribute='importo')|sum)|euro }}</h4>
                 <p class="mb-0">Da incassare</p>
             </div>
         </div>
@@ -99,7 +129,7 @@
     <div class="col-md-4">
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
-                <h4>€{{ "%.2f"|format(pagamenti|map(attribute='importo')|sum) }}</h4>
+                <h4>{{ (pagamenti|map(attribute='importo')|sum)|euro }}</h4>
                 <p class="mb-0">Totale</p>
             </div>
         </div>
@@ -115,12 +145,54 @@
             <table class="table table-striped table-hover">
                 <thead class="table-dark">
                     <tr>
-                        <th>Periodo</th>
-                        <th>Cliente</th>
-                        <th>Corso</th>
-                        <th>Importo</th>
-                        <th>Stato</th>
-                        <th>Data Pagamento</th>
+                        <th class="sortable-header" onclick="sortTable('periodo')">
+                            Periodo
+                            {% if sort_by == 'periodo' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('cliente')">
+                            Cliente
+                            {% if sort_by == 'cliente' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('corso')">
+                            Corso
+                            {% if sort_by == 'corso' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('importo')">
+                            Importo
+                            {% if sort_by == 'importo' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('stato')">
+                            Stato
+                            {% if sort_by == 'stato' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('data_pagamento')">
+                            Data Pagamento
+                            {% if sort_by == 'data_pagamento' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
                         <th>Azioni</th>
                     </tr>
                 </thead>
@@ -130,7 +202,7 @@
                         <td>{{ pagamento.periodo }}</td>
                         <td>{{ pagamento.cliente.nome_completo }}</td>
                         <td>{{ pagamento.corso.nome }}</td>
-                        <td><strong>€{{ "%.2f"|format(pagamento.importo) }}</strong></td>
+                        <td><strong>{{ pagamento.importo|euro }}</strong></td>
                         <td>
                             {% if pagamento.pagato %}
                                 <span class="badge bg-success">Pagato</span>
@@ -180,14 +252,75 @@
             </table>
         </div>
 
+        <!-- Paginazione -->
+        {% if pagamenti_paginated and pagamenti_paginated.pages > 1 %}
+        <nav aria-label="Navigazione pagamenti" class="mt-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <small class="text-muted">
+                        Mostra {{ pagamenti_paginated.per_page * (pagamenti_paginated.page - 1) + 1 }} - 
+                        {{ pagamenti_paginated.per_page * (pagamenti_paginated.page - 1) + pagamenti_paginated.items|length }} di 
+                        {{ pagamenti_paginated.total }} pagamenti
+                        {% if search or mese_filtro or anno_filtro or cliente_filtro or corso_filtro or stato != 'tutti' %}(filtrati){% endif %}
+                    </small>
+                </div>
+                <div class="col-md-6">
+                    <ul class="pagination pagination-sm justify-content-end mb-0">
+                        {% if pagamenti_paginated.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('pagamenti', page=pagamenti_paginated.prev_num, search=search, stato=stato, per_page=per_page, sort_by=sort_by, sort_order=sort_order, mese=mese_filtro, anno=anno_filtro, cliente_id=cliente_filtro, corso_id=corso_filtro) }}">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                        </li>
+                        {% endif %}
+                        
+                        {% for page_num in pagamenti_paginated.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                            {% if page_num %}
+                                {% if page_num != pagamenti_paginated.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('pagamenti', page=page_num, search=search, stato=stato, per_page=per_page, sort_by=sort_by, sort_order=sort_order, mese=mese_filtro, anno=anno_filtro, cliente_id=cliente_filtro, corso_id=corso_filtro) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% endif %}
+                            {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if pagamenti_paginated.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('pagamenti', page=pagamenti_paginated.next_num, search=search, stato=stato, per_page=per_page, sort_by=sort_by, sort_order=sort_order, mese=mese_filtro, anno=anno_filtro, cliente_id=cliente_filtro, corso_id=corso_filtro) }}">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        {% else %}
         <div class="mt-3">
             <small class="text-muted">
-                Trovati {{ pagamenti|length }} pagamenti
-                {% if mese_filtro or anno_filtro or cliente_filtro or corso_filtro %}
-                    (filtrati)
-                {% endif %}
+                Trovati {{ pagamenti|length if pagamenti else 0 }} pagamenti
+                {% if search or mese_filtro or anno_filtro or cliente_filtro or corso_filtro or stato != 'tutti' %}(filtrati){% endif %}
             </small>
         </div>
+        {% endif %}
 
         {% else %}
         <div class="text-center py-5">
@@ -238,11 +371,145 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.sortable-header:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sortable-header i {
+    font-size: 0.8em;
+    margin-left: 4px;
+}
+
+#searchLive {
+    border: 2px solid #dee2e6;
+    transition: border-color 0.2s ease;
+}
+
+#searchLive:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.search-loading {
+    border-color: #ffc107 !important;
+}
+</style>
+
 <script>
 function confermaEliminazione(pagamentoInfo, url) {
     document.getElementById('pagamentoInfo').textContent = pagamentoInfo;
     document.getElementById('deleteForm').action = url;
     new bootstrap.Modal(document.getElementById('confirmDeleteModal')).show();
 }
+
+// === FUNZIONI PER RICERCA LIVE E ORDINAMENTO ===
+
+let liveSearchTimeout;
+const searchInput = document.getElementById('searchLive');
+const searchForm = document.getElementById('searchForm');
+
+// Ricerca live con debouncing
+if (searchInput) {
+    searchInput.addEventListener('input', function() {
+        clearTimeout(liveSearchTimeout);
+        
+        const searchValue = this.value;
+        
+        // Aggiungi classe di loading
+        this.classList.add('search-loading');
+        
+        liveSearchTimeout = setTimeout(() => {
+            // Aggiorna il campo hidden
+            document.getElementById('search').value = searchValue;
+            
+            // Reset alla pagina 1
+            document.querySelector('input[name="page"]').value = '1';
+            
+            // Submit del form
+            searchForm.submit();
+        }, 300);
+    });
+}
+
+// Auto-submit quando cambiano i filtri
+['stato', 'mese', 'anno', 'cliente_id', 'corso_id'].forEach(id => {
+    const element = document.getElementById(id);
+    if (element) {
+        element.addEventListener('change', function() {
+            document.querySelector('input[name="page"]').value = '1';
+            searchForm.submit();
+        });
+    }
+});
+
+// Funzione per ordinamento colonne
+function sortTable(column) {
+    const currentSortBy = '{{ sort_by }}';
+    const currentSortOrder = '{{ sort_order }}';
+    
+    let newSortOrder = 'asc';
+    
+    // Se stiamo cliccando sulla stessa colonna, invertiamo l'ordine
+    if (currentSortBy === column) {
+        newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    }
+    
+    // Aggiorna i valori hidden
+    document.querySelector('input[name="sort_by"]').value = column;
+    document.querySelector('input[name="sort_order"]').value = newSortOrder;
+    document.querySelector('input[name="page"]').value = '1'; // Reset alla pagina 1
+    
+    // Submit del form
+    searchForm.submit();
+}
+
+// Funzione per cambio paginazione
+function changePagination() {
+    const form = document.getElementById('searchForm');
+    const hiddenPage = form.querySelector('input[name="page"]');
+    if (hiddenPage) {
+        hiddenPage.value = '1';
+    }
+    form.submit();
+}
+
+// Migliora il feedback visivo durante il caricamento
+if (searchForm) {
+    searchForm.addEventListener('submit', function() {
+        // Disabilita il form per evitare submit multipli
+        const buttons = this.querySelectorAll('button, input[type="submit"]');
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            if (btn.innerHTML.includes('Filtra')) {
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Filtrando...';
+            }
+        });
+    });
+}
+
+// Ripristina il form se si torna indietro
+window.addEventListener('pageshow', function() {
+    if (searchForm) {
+        const buttons = searchForm.querySelectorAll('button, input[type="submit"]');
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            if (btn.innerHTML.includes('Filtrando')) {
+                btn.innerHTML = '<i class="bi bi-search me-1"></i>Filtra';
+            }
+        });
+    }
+    
+    // Rimuovi classe loading dalla ricerca
+    if (searchInput) {
+        searchInput.classList.remove('search-loading');
+    }
+});
 </script>
 {% endblock %}
