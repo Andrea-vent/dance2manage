@@ -7,9 +7,9 @@ Ecco il report dettagliato dei tuoi compensi per il mese di {{ mese_nome }} {{ a
 
 RIEPILOGO
 ---------
-• Compenso Totale:      €{{ "%.2f"|format(report.compenso_totale) }}
+• Compenso Totale:      {{ report.compenso_totale|euro }}
 • Corsi Insegnati:      {{ report.corsi_nomi|length }}
-• Incasso dai Corsi:    €{{ "%.2f"|format(report.incasso_totale) }}
+• Incasso dai Corsi:    {{ report.incasso_totale|euro }}
 • Percentuale Media:    {{ "%.1f"|format(report.percentuale_media) }}%
 
 {% if corsi_dettaglio %}
@@ -20,9 +20,9 @@ DETTAGLIO PER CORSO
    Giorno/Orario: {{ corso.corso.giorno }} alle {{ corso.corso.orario.strftime('%H:%M') }}
    Iscritti: {{ corso.corso.numero_iscritti }}
    Pagamenti: {{ corso.numero_pagamenti }}/{{ corso.corso.numero_iscritti }}
-   Incasso: €{{ "%.2f"|format(corso.incasso_corso) }}
+   Incasso: {{ corso.incasso_corso|euro }}
    Percentuale: {{ "%.1f"|format(corso.percentuale_insegnante) }}%
-   Compenso: €{{ "%.2f"|format(corso.compenso_insegnante) }}
+   Compenso: {{ corso.compenso_insegnante|euro }}
 
 {% if corso.corso.clienti %}
    👥 ALLIEVI ISCRITTI:

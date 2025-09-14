@@ -405,7 +405,7 @@ document.getElementById('search').addEventListener('input', function() {
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(() => {
         document.getElementById('searchForm').submit();
-    }, 500); // Attendi 500ms prima di sottomettere
+    }, 400); // Attendi 400ms prima di sottomettere
 });
 
 // Auto-submit quando cambia lo stato
@@ -437,7 +437,7 @@ searchInput.addEventListener('input', function() {
         
         // Submit del form
         searchForm.submit();
-    }, 300); // 300ms di debouncing
+    }, 400); // 400ms di debouncing
 });
 
 // Funzione per ordinamento colonne

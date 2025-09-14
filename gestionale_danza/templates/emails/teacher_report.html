@@ -331,7 +331,7 @@
             
             <div class="summary-cards">
                 <div class="summary-card">
-                    <h3>€{{ "%.2f"|format(report.compenso_totale) }}</h3>
+                    <h3>{{ report.compenso_totale|euro }}</h3>
                     <p>Compenso Totale</p>
                 </div>
                 <div class="summary-card">
@@ -339,7 +339,7 @@
                     <p>Corsi Insegnati</p>
                 </div>
                 <div class="summary-card">
-                    <h3>€{{ "%.2f"|format(report.incasso_totale) }}</h3>
+                    <h3>{{ report.incasso_totale|euro }}</h3>
                     <p>Incasso dai Tuoi Corsi</p>
                 </div>
                 <div class="summary-card">
@@ -357,7 +357,7 @@
                     <div class="course-info">
                         <span class="badge">{{ corso.corso.giorno }} {{ corso.corso.orario.strftime('%H:%M') }}</span>
                         <span class="badge">{{ corso.corso.numero_iscritti }} iscritti</span>
-                        <span class="badge amount">€{{ "%.2f"|format(corso.compenso_insegnante) }}</span>
+                        <span class="badge amount">{{ corso.compenso_insegnante|euro }}</span>
                     </div>
                 </div>
                 
@@ -366,7 +366,7 @@
                         <strong>Pagamenti:</strong> {{ corso.numero_pagamenti }}/{{ corso.corso.numero_iscritti }}
                     </div>
                     <div class="stat">
-                        <strong>Incasso:</strong> €{{ "%.2f"|format(corso.incasso_corso) }}
+                        <strong>Incasso:</strong> {{ corso.incasso_corso|euro }}
                     </div>
                     <div class="stat">
                         <strong>Percentuale:</strong> {{ "%.1f"|format(corso.percentuale_insegnante) }}%

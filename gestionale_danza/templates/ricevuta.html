@@ -272,7 +272,7 @@
                 <td>Quota mensile corso di danza</td>
                 <td>{{ pagamento.periodo }}</td>
                 <td>{{ pagamento.corso.nome }}</td>
-                <td class="importo">€ {{ "%.2f"|format(pagamento.importo) }}</td>
+                <td class="importo">{{ pagamento.importo|euro }}</td>
             </tr>
         </tbody>
     </table>
@@ -280,7 +280,7 @@
     <!-- Totale -->
     <div class="totale">
         <div class="totale-box">
-            <h3>Totale: € {{ "%.2f"|format(pagamento.importo) }}</h3>
+            <h3>Totale: {{ pagamento.importo|euro }}</h3>
         </div>
     </div>
 

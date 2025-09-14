@@ -229,9 +229,17 @@
                                 
                                 {% if pagamento.pagato %}
                                 <a href="{{ url_for('genera_ricevuta', id=pagamento.id) }}" 
-                                   class="btn btn-outline-info" title="Genera ricevuta">
+                                   class="btn btn-outline-info" title="Genera ricevuta PDF">
                                     <i class="bi bi-file-pdf"></i>
                                 </a>
+                                
+                                {% if pagamento.cliente.email and email_configured %}
+                                <button type="button" class="btn btn-outline-success" 
+                                        onclick="inviaRicevutaEmail({{ pagamento.id }}, '{{ pagamento.cliente.email }}')"
+                                        title="Invia ricevuta via email">
+                                    <i class="bi bi-envelope"></i>
+                                </button>
+                                {% endif %}
                                 {% endif %}
                                 
                                 <a href="{{ url_for('modifica_pagamento', id=pagamento.id) }}" 
@@ -368,6 +376,43 @@
         </div>
     </div>
 </div>
+
+<!-- Modal invio ricevuta via email -->
+<div class="modal fade" id="emailReceiptModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-envelope me-2"></i>Invia Ricevuta via Email
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Confermi l'invio della ricevuta PDF via email?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-1"></i>
+                    <strong>Destinatario:</strong> <span id="emailRecipient"></span><br>
+                    <strong>Pagamento:</strong> <span id="paymentInfo"></span>
+                </div>
+                <div id="emailProgress" class="d-none">
+                    <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Invio in corso...</span>
+                        </div>
+                        <span>Invio email in corso...</span>
+                    </div>
+                </div>
+                <div id="emailResult" class="d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annulla</button>
+                <button type="button" class="btn btn-success" id="confirmEmailSend">
+                    <i class="bi bi-send me-1"></i>Invia Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -434,7 +479,7 @@ if (searchInput) {
             
             // Submit del form
             searchForm.submit();
-        }, 300);
+        }, 700);
     });
 }
 
@@ -510,6 +555,95 @@ window.addEventListener('pageshow', function() {
     if (searchInput) {
         searchInput.classList.remove('search-loading');
     }
+});
+
+// === FUNZIONI PER INVIO EMAIL RICEVUTE ===
+
+let currentPaymentId = null;
+
+function inviaRicevutaEmail(pagamentoId, clienteEmail) {
+    currentPaymentId = pagamentoId;
+    
+    // Trova informazioni sul pagamento dalla tabella
+    const row = document.querySelector(`button[onclick*="${pagamentoId}"]`).closest('tr');
+    const periodo = row.cells[0].textContent.trim();
+    const cliente = row.cells[1].textContent.trim();
+    const corso = row.cells[2].textContent.trim();
+    const importo = row.cells[3].textContent.trim();
+    
+    // Popola il modale
+    document.getElementById('emailRecipient').textContent = clienteEmail;
+    document.getElementById('paymentInfo').textContent = `${periodo} - ${cliente} (${corso}) - ${importo}`;
+    
+    // Reset stati
+    document.getElementById('emailProgress').classList.add('d-none');
+    document.getElementById('emailResult').classList.add('d-none');
+    document.getElementById('confirmEmailSend').disabled = false;
+    
+    // Mostra il modale
+    new bootstrap.Modal(document.getElementById('emailReceiptModal')).show();
+}
+
+// Event listener per conferma invio email
+document.getElementById('confirmEmailSend').addEventListener('click', function() {
+    if (!currentPaymentId) return;
+    
+    const button = this;
+    const progress = document.getElementById('emailProgress');
+    const result = document.getElementById('emailResult');
+    
+    // Disabilita il pulsante e mostra progress
+    button.disabled = true;
+    progress.classList.remove('d-none');
+    result.classList.add('d-none');
+    
+    // Invia richiesta AJAX
+    fetch(`/pagamenti/${currentPaymentId}/invia-email`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || ''
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        progress.classList.add('d-none');
+        result.classList.remove('d-none');
+        
+        if (data.success) {
+            result.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-1"></i>
+                    ${data.message}
+                </div>
+            `;
+            
+            // Chiudi automaticamente dopo 2 secondi
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('emailReceiptModal')).hide();
+            }, 2000);
+        } else {
+            result.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    ${data.message}
+                </div>
+            `;
+            button.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Errore:', error);
+        progress.classList.add('d-none');
+        result.classList.remove('d-none');
+        result.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Errore durante l'invio dell'email. Riprova più tardi.
+            </div>
+        `;
+        button.disabled = false;
+    });
 });
 </script>
 {% endblock %}

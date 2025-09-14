@@ -146,7 +146,7 @@
                             <tr>
                                 <td>{{ pagamento.periodo }}</td>
                                 <td>{{ pagamento.corso.nome }}</td>
-                                <td>€ {{ "%.2f"|format(pagamento.importo) }}</td>
+                                <td>{{ pagamento.importo|euro }}</td>
                                 <td>{{ pagamento.metodo_pagamento or 'Contanti' }}</td>
                                 <td>
                                     {% if pagamento.pagato %}

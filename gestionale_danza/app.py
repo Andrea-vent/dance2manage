@@ -99,9 +99,15 @@ app.config['TOASTR_POSITION_CLASS'] = 'toast-top-right'
 def inject_settings():
     try:
         settings = Settings.get_settings()
-        return dict(global_settings=settings)
+        return dict(
+            global_settings=settings,
+            email_configured=settings.mail_configured if settings else False
+        )
     except Exception:
-        return dict(global_settings=None)
+        return dict(
+            global_settings=None,
+            email_configured=False
+        )
 
 # Filtro Jinja2 per formattazione valuta italiana
 @app.template_filter('currency')
@@ -145,9 +151,12 @@ def update_mail_config(settings):
         app.config['MAIL_SUPPRESS_SEND'] = settings.mail_suppress_send
         app.config['MAIL_DEBUG'] = settings.mail_debug
         
-        # Aggiorna anche le configurazioni Flask-Security per email
+        # Abilita funzionalità Flask-Security email
         app.config['SECURITY_EMAIL_SENDER'] = settings.mail_default_sender
-        app.config['MAIL_SUPPRESS_SEND'] = settings.mail_suppress_send
+        app.config['SECURITY_RECOVERABLE'] = True
+        app.config['SECURITY_CHANGEABLE'] = True
+        app.config['SECURITY_CONFIRMABLE'] = False  # Disabilitato di default per semplicità
+        app.config['SECURITY_REGISTERABLE'] = False  # Disabilitato per sicurezza
         
         # Re-inizializza Mail con nuove configurazioni
         global mail
@@ -155,10 +164,15 @@ def update_mail_config(settings):
         
         print(f"✓ Configurazione email aggiornata: {settings.mail_server}:{settings.mail_port}")
     else:
-        # Disabilita email se non configurata
+        # Disabilita completamente le funzionalità email
         app.config['MAIL_SUPPRESS_SEND'] = True
         app.config['SECURITY_EMAIL_SENDER'] = 'noreply@dance2manage.com'
-        print("⚠ Email non configurata - invio disabilitato")
+        app.config['SECURITY_RECOVERABLE'] = False  # Disabilita password reset
+        app.config['SECURITY_CHANGEABLE'] = False   # Disabilita cambio password via email
+        app.config['SECURITY_CONFIRMABLE'] = False  # Disabilita conferme via email
+        app.config['SECURITY_REGISTERABLE'] = False # Disabilita registrazione
+        
+        print("⚠ Email non configurata - funzionalità email disabilitate")
 
 def init_mail_config():
     """Inizializza la configurazione email all'avvio"""
@@ -805,6 +819,95 @@ def genera_ricevuta(id):
     except Exception as e:
         flash(f'Errore nella generazione della ricevuta: {str(e)}', 'error')
         return redirect(url_for('pagamenti'))
+
+@app.route('/pagamenti/<int:id>/invia-email', methods=['POST'])
+@login_required
+def invia_ricevuta_email(id):
+    """Invia ricevuta PDF via email al cliente"""
+    from flask_mailman import EmailMessage
+    import tempfile
+    import os
+    
+    try:
+        pagamento = Pagamento.query.get_or_404(id)
+        
+        # Verifica che il pagamento sia pagato
+        if not pagamento.pagato:
+            return jsonify({'success': False, 'message': 'Il pagamento deve essere marcato come pagato'})
+        
+        # Verifica che il cliente abbia un email
+        if not pagamento.cliente.email:
+            return jsonify({'success': False, 'message': 'Il cliente non ha un indirizzo email configurato'})
+        
+        # Ottieni impostazioni aziendali
+        settings = Settings.get_settings()
+        
+        # Verifica configurazione email
+        if not settings.mail_configured:
+            return jsonify({'success': False, 'message': 'Configurazione email non completata. Contattare l\'amministratore.'})
+        
+        # Aggiorna configurazione email
+        update_mail_config(settings)
+        
+        # Genera PDF della ricevuta
+        pdf_path = genera_ricevuta_pdf(pagamento, pdf_folder)
+        
+        if not os.path.exists(pdf_path):
+            return jsonify({'success': False, 'message': 'Errore nella generazione del PDF della ricevuta'})
+        
+        # Prepara il contenuto dell'email
+        subject = f"Ricevuta Pagamento #{pagamento.numero_ricevuta:05d} - {settings.denominazione_sociale}"
+        
+        body = f"""Gentile {pagamento.cliente.nome_completo},
+
+In allegato troverà la ricevuta per il pagamento del corso {pagamento.corso.nome}.
+
+Dettagli pagamento:
+- Numero ricevuta: #{pagamento.numero_ricevuta:05d}
+- Periodo: {pagamento.periodo}
+- Corso: {pagamento.corso.nome}
+- Importo: {pagamento.importo:,.2f} €
+- Data pagamento: {pagamento.data_pagamento.strftime('%d/%m/%Y') if pagamento.data_pagamento else 'N/D'}
+
+Grazie per aver scelto {settings.denominazione_sociale}!
+
+---
+{settings.denominazione_sociale}
+{settings.indirizzo_completo if settings.indirizzo_completo else ''}
+{f'Tel: {settings.telefono}' if settings.telefono else ''}
+{f'Email: {settings.email}' if settings.email else ''}
+"""
+
+        # Crea email
+        msg = EmailMessage(
+            subject=subject,
+            body=body,
+            from_email=settings.mail_default_sender,
+            to=[pagamento.cliente.email]
+        )
+        
+        # Allega il PDF
+        with open(pdf_path, 'rb') as pdf_file:
+            pdf_content = pdf_file.read()
+            msg.attach(
+                f"RICEVUTA-{pagamento.numero_ricevuta:05d}.pdf", 
+                pdf_content, 
+                'application/pdf'
+            )
+        
+        # Invia email
+        if not settings.mail_suppress_send:
+            msg.send()
+            message = f'Ricevuta inviata con successo a {pagamento.cliente.email}'
+        else:
+            message = f'Ricevuta preparata ma non inviata (modalità test attiva). Destinatario: {pagamento.cliente.email}'
+        
+        return jsonify({'success': True, 'message': message})
+        
+    except Exception as e:
+        error_message = f'Errore durante l\'invio dell\'email: {str(e)}'
+        print(f"❌ Invio email ricevuta fallito: {error_message}")
+        return jsonify({'success': False, 'message': error_message})
 
 @app.route('/genera_ricevute_bulk', methods=['POST'])
 @login_required

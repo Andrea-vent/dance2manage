@@ -101,10 +101,17 @@
                         </form>
                         
                         <div class="auth-links text-center mt-3 mb-4">
+                            {% if email_configured %}
                             <a href="{{ url_for('security.forgot_password') }}" class="forgot-password-link">
                                 <i class="bi bi-key me-1"></i>
                                 Password dimenticata?
                             </a>
+                            {% else %}
+                            <span class="text-muted small">
+                                <i class="bi bi-envelope-slash me-1"></i>
+                                Reset password non disponibile (email non configurata)
+                            </span>
+                            {% endif %}
                         </div>
                         
                         <div class="footer-text">

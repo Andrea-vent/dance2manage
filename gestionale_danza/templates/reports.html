@@ -19,11 +19,13 @@
                    class="btn btn-success">
                     <i class="bi bi-file-earmark-excel me-1"></i>Esporta Excel
                 </a>
+                {% if email_configured %}
                 <a href="{{ url_for('email_all_teachers_reports', mese=mese_filtro, anno=anno_filtro) }}" 
                    class="btn btn-outline-info" 
                    onclick="return confirmEmailAll(event)">
                     <i class="bi bi-envelope me-1"></i>Email a Tutti
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -73,7 +75,7 @@
     <div class="col-md-3">
         <div class="card bg-primary text-white">
             <div class="card-body text-center">
-                <h4>€{{ "%.2f"|format(riepilogo.incasso_totale) }}</h4>
+                <h4>{{ riepilogo.incasso_totale|euro }}</h4>
                 <p class="mb-0">Incasso Totale</p>
             </div>
         </div>
@@ -81,7 +83,7 @@
     <div class="col-md-3">
         <div class="card bg-success text-white">
             <div class="card-body text-center">
-                <h4>€{{ "%.2f"|format(riepilogo.compensi_totali) }}</h4>
+                <h4>{{ riepilogo.compensi_totali|euro }}</h4>
                 <p class="mb-0">Compensi Insegnanti</p>
             </div>
         </div>
@@ -89,7 +91,7 @@
     <div class="col-md-3">
         <div class="card bg-info text-white">
             <div class="card-body text-center">
-                <h4>€{{ "%.2f"|format(riepilogo.utile_netto) }}</h4>
+                <h4>{{ riepilogo.utile_netto|euro }}</h4>
                 <p class="mb-0">Utile Netto</p>
             </div>
         </div>
@@ -140,20 +142,20 @@
                                 <td>{{ report.insegnante.nome_completo }}</td>
                                 <td>{{ report.corso.numero_iscritti }}</td>
                                 <td>{{ report.numero_pagamenti }}/{{ report.corso.numero_iscritti }}</td>
-                                <td><strong>€{{ "%.2f"|format(report.incasso_corso) }}</strong></td>
+                                <td><strong>{{ report.incasso_corso|euro }}</strong></td>
                                 <td>{{ "%.1f"|format(report.percentuale_insegnante) }}%</td>
-                                <td class="text-success">€{{ "%.2f"|format(report.compenso_insegnante) }}</td>
-                                <td class="text-primary">€{{ "%.2f"|format(report.utile_corso) }}</td>
+                                <td class="text-success">{{ report.compenso_insegnante|euro }}</td>
+                                <td class="text-primary">{{ report.utile_corso|euro }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                         <tfoot class="table-secondary">
                             <tr>
                                 <th colspan="4">TOTALI</th>
-                                <th>€{{ "%.2f"|format(riepilogo.incasso_totale) }}</th>
+                                <th>{{ riepilogo.incasso_totale|euro }}</th>
                                 <th>-</th>
-                                <th class="text-success">€{{ "%.2f"|format(riepilogo.compensi_totali) }}</th>
-                                <th class="text-primary">€{{ "%.2f"|format(riepilogo.utile_netto) }}</th>
+                                <th class="text-success">{{ riepilogo.compensi_totali|euro }}</th>
+                                <th class="text-primary">{{ riepilogo.utile_netto|euro }}</th>
                             </tr>
                         </tfoot>
                     </table>
@@ -208,23 +210,27 @@
                                         <span class="badge bg-light text-dark me-1 mb-1">{{ corso_nome }}</span>
                                     {% endfor %}
                                 </td>
-                                <td>€{{ "%.2f"|format(report.incasso_totale) }}</td>
+                                <td>{{ report.incasso_totale|euro }}</td>
                                 <td>{{ "%.1f"|format(report.percentuale_media) }}%</td>
-                                <td class="text-success"><strong>€{{ "%.2f"|format(report.compenso_totale) }}</strong></td>
+                                <td class="text-success"><strong>{{ report.compenso_totale|euro }}</strong></td>
                                 <td>
                                     <a href="{{ url_for('genera_pdf_compensi_insegnante', insegnante_id=report.insegnante.id, mese=mese_filtro, anno=anno_filtro) }}" 
                                        class="btn btn-sm btn-outline-danger me-1" title="PDF Compenso">
                                         <i class="bi bi-file-earmark-pdf"></i>
                                     </a>
-                                    {% if report.insegnante.email %}
+                                    {% if email_configured and report.insegnante.email %}
                                     <a href="{{ url_for('email_teacher_report', insegnante_id=report.insegnante.id, mese=mese_filtro, anno=anno_filtro) }}" 
                                        class="btn btn-sm btn-outline-info" 
                                        title="Invia Report via Email"
                                        onclick="return confirmEmailTeacher(event, '{{ report.insegnante.nome_completo }}', '{{ report.insegnante.email }}')">
                                         <i class="bi bi-envelope"></i>
                                     </a>
-                                    {% else %}
-                                    <span class="btn btn-sm btn-outline-secondary disabled" title="Email non configurata">
+                                    {% elif not email_configured %}
+                                    <span class="btn btn-sm btn-outline-secondary disabled" title="Email server non configurato">
+                                        <i class="bi bi-envelope-slash"></i>
+                                    </span>
+                                    {% elif not report.insegnante.email %}
+                                    <span class="btn btn-sm btn-outline-secondary disabled" title="Email insegnante non configurata">
                                         <i class="bi bi-envelope-slash"></i>
                                     </span>
                                     {% endif %}

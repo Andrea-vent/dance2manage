@@ -4,6 +4,19 @@ import sys
 from datetime import datetime
 from flask import render_template
 
+def format_currency_it(value):
+    """Formatta un numero come valuta italiana: €1.000,00"""
+    if value is None:
+        return "€0,00"
+    try:
+        # Formatta con separatore migliaia e virgola decimale
+        formatted = "{:,.2f}".format(float(value))
+        # Sostituisci . con , per decimali e , con . per migliaia (formato italiano)
+        formatted = formatted.replace(',', 'TEMP').replace('.', ',').replace('TEMP', '.')
+        return f"€ {formatted}"
+    except (ValueError, TypeError):
+        return "€0,00"
+
 def genera_ricevuta_pdf(pagamento, pdf_folder):
     """
     Genera una ricevuta PDF per il pagamento specificato
@@ -294,7 +307,7 @@ def genera_pdf_reportlab(pagamento, pdf_path, ricevuta_numero):
             ['Quota mensile corso di danza', 
              pagamento.periodo, 
              pagamento.corso.nome, 
-             f"€ {pagamento.importo:.2f}"]
+             format_currency_it(pagamento.importo)]
         ]
         
         dettagli_table = Table(dettagli_data, colWidths=[2.5*inch, 1.5*inch, 2*inch, 1*inch])
@@ -325,7 +338,7 @@ def genera_pdf_reportlab(pagamento, pdf_path, ricevuta_numero):
                                     borderPadding=10,
                                     backColor=colors.lightgrey)
         
-        story.append(Paragraph(f"<b>Totale: € {pagamento.importo:.2f}</b>", totale_style))
+        story.append(Paragraph(f"<b>Totale: {format_currency_it(pagamento.importo)}</b>", totale_style))
         story.append(Spacer(1, 20))
         
         # Informazioni pagamento
@@ -428,9 +441,9 @@ def genera_compensi_pdf(report_insegnanti, riepilogo, mese, anno, pdf_folder):
         story.append(Paragraph("Riepilogo Generale", heading_style))
         
         riepilogo_data = [
-            ['Incasso Totale Mensile:', f"€ {riepilogo['incasso_totale']:.2f}"],
-            ['Compensi Totali da Pagare:', f"€ {riepilogo['compensi_totali']:.2f}"],
-            ['Utile Netto Scuola:', f"€ {riepilogo['utile_netto']:.2f}"],
+            ['Incasso Totale Mensile:', format_currency_it(riepilogo['incasso_totale'])],
+            ['Compensi Totali da Pagare:', format_currency_it(riepilogo['compensi_totali'])],
+            ['Utile Netto Scuola:', format_currency_it(riepilogo['utile_netto'])],
             ['Numero Pagamenti:', str(riepilogo['numero_pagamenti'])]
         ]
         
@@ -461,9 +474,9 @@ def genera_compensi_pdf(report_insegnanti, riepilogo, mese, anno, pdf_folder):
                     report.insegnante.nome_completo,
                     report.insegnante.telefono or '-',
                     '\n'.join(report.corsi_nomi) if len(report.corsi_nomi) <= 3 else f"{len(report.corsi_nomi)} corsi",
-                    f"€ {report.incasso_totale:.2f}",
+                    format_currency_it(report.incasso_totale),
                     f"{report.percentuale_media:.1f}%",
-                    f"€ {report.compenso_totale:.2f}"
+                    format_currency_it(report.compenso_totale)
                 ])
             
             compensi_table = Table(table_data, colWidths=[1.8*inch, 1*inch, 1.5*inch, 1*inch, 0.7*inch, 1*inch])
@@ -495,7 +508,7 @@ def genera_compensi_pdf(report_insegnanti, riepilogo, mese, anno, pdf_folder):
                                         borderPadding=8,
                                         backColor=colors.lightgreen)
             
-            story.append(Paragraph(f"<b>TOTALE COMPENSI DA PAGARE: € {riepilogo['compensi_totali']:.2f}</b>", totale_style))
+            story.append(Paragraph(f"<b>TOTALE COMPENSI DA PAGARE: {format_currency_it(riepilogo['compensi_totali'])}</b>", totale_style))
         
         # Footer
         story.append(Spacer(1, 40))
@@ -704,9 +717,9 @@ def genera_compensi_insegnante_pdf(insegnante, report_insegnante, corsi_insegnan
                     corso_report.corso.orario.strftime('%H:%M'),
                     str(corso_report.corso.numero_iscritti),
                     str(corso_report.numero_pagamenti),
-                    f"€ {corso_report.incasso_corso:.2f}",
+                    format_currency_it(corso_report.incasso_corso),
                     f"{corso_report.percentuale_insegnante:.0f}%",
-                    f"€ {corso_report.compenso_insegnante:.2f}"
+                    format_currency_it(corso_report.compenso_insegnante)
                 ])
             
             corsi_table = Table(corsi_data, colWidths=[1.5*inch, 0.8*inch, 0.7*inch, 0.6*inch, 0.7*inch, 0.8*inch, 0.4*inch, 0.8*inch])
@@ -789,10 +802,10 @@ def genera_compensi_insegnante_pdf(insegnante, report_insegnante, corsi_insegnan
         story.append(Paragraph("Riepilogo Compenso", heading_style))
         
         riepilogo_data = [
-            ['Totale Incasso dai Corsi:', f"€ {report_insegnante.incasso_totale:.2f}"],
+            ['Totale Incasso dai Corsi:', format_currency_it(report_insegnante.incasso_totale)],
             ['Percentuale Media:', f"{report_insegnante.percentuale_media:.1f}%"],
             ['Numero Corsi Attivi:', str(len(report_insegnante.corsi_nomi))],
-            ['COMPENSO TOTALE:', f"€ {report_insegnante.compenso_totale:.2f}"]
+            ['COMPENSO TOTALE:', format_currency_it(report_insegnante.compenso_totale)]
         ]
         
         riepilogo_table = Table(riepilogo_data, colWidths=[3*inch, 2*inch])
