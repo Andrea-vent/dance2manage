@@ -27,9 +27,10 @@
             <div class="card-body">
                 <form method="GET" class="row g-3" id="searchForm">
                     <div class="col-md-4">
-                        <label for="search" class="form-label">Ricerca</label>
-                        <input type="text" class="form-control" id="search" name="search" 
-                               value="{{ search }}" placeholder="Nome, cognome o email...">
+                        <label for="search" class="form-label">Ricerca Live</label>
+                        <input type="text" class="form-control" id="searchLive" 
+                               value="{{ search }}" placeholder="Nome, cognome, email, telefono, codice fiscale...">
+                        <input type="hidden" id="search" name="search" value="{{ search }}">
                     </div>
                     <div class="col-md-3">
                         <label for="stato" class="form-label">Stato</label>
@@ -57,6 +58,8 @@
                     </div>
                     <!-- Reset alla pagina 1 quando si cambia filtro -->
                     <input type="hidden" name="page" value="1">
+                    <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                    <input type="hidden" name="sort_order" value="{{ sort_order }}">
                 </form>
             </div>
         </div>
@@ -74,10 +77,38 @@
                         <th>
                             <input type="checkbox" id="selectAll" onclick="toggleAllClienti()">
                         </th>
-                        <th>Nome</th>
-                        <th>Codice Fiscale</th>
-                        <th>Telefono</th>
-                        <th>Email</th>
+                        <th class="sortable-header" onclick="sortTable('cognome')">
+                            Nome
+                            {% if sort_by == 'cognome' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('codice_fiscale')">
+                            Codice Fiscale
+                            {% if sort_by == 'codice_fiscale' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('telefono')">
+                            Telefono
+                            {% if sort_by == 'telefono' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
+                        <th class="sortable-header" onclick="sortTable('email')">
+                            Email
+                            {% if sort_by == 'email' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
                         <th>Corsi</th>
                         <th>Stato</th>
                         <th>Azioni</th>
@@ -151,7 +182,7 @@
                     <ul class="pagination pagination-sm justify-content-end mb-0">
                         {% if clienti.has_prev %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('clienti', page=clienti.prev_num, search=search, stato=stato, per_page=per_page) }}">
+                            <a class="page-link" href="{{ url_for('clienti', page=clienti.prev_num, search=search, stato=stato, per_page=per_page, sort_by=sort_by, sort_order=sort_order) }}">
                                 <i class="bi bi-chevron-left"></i>
                             </a>
                         </li>
@@ -165,7 +196,7 @@
                             {% if page_num %}
                                 {% if page_num != clienti.page %}
                                 <li class="page-item">
-                                    <a class="page-link" href="{{ url_for('clienti', page=page_num, search=search, stato=stato, per_page=per_page) }}">
+                                    <a class="page-link" href="{{ url_for('clienti', page=page_num, search=search, stato=stato, per_page=per_page, sort_by=sort_by, sort_order=sort_order) }}">
                                         {{ page_num }}
                                     </a>
                                 </li>
@@ -183,7 +214,7 @@
                         
                         {% if clienti.has_next %}
                         <li class="page-item">
-                            <a class="page-link" href="{{ url_for('clienti', page=clienti.next_num, search=search, stato=stato, per_page=per_page) }}">
+                            <a class="page-link" href="{{ url_for('clienti', page=clienti.next_num, search=search, stato=stato, per_page=per_page, sort_by=sort_by, sort_order=sort_order) }}">
                                 <i class="bi bi-chevron-right"></i>
                             </a>
                         </li>
@@ -295,10 +326,18 @@
                         </div>
                     </div>
                     
+                    <div id="dettagliCorsi" class="mb-3" style="display: none;">
+                        <label class="form-label">Corsi che verranno fatturati:</label>
+                        <div id="corsiElenco" class="border rounded p-3 bg-light">
+                            <!-- Popolato via JavaScript -->
+                        </div>
+                    </div>
+                    
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle me-2"></i>
                         <strong>Nota:</strong> Verranno create ricevute per tutti i corsi attivi di ogni cliente selezionato. 
                         Il metodo di pagamento sarà impostato su "Contanti" (modificabile successivamente).
+                        <br><small class="text-muted">I clienti non iscritti a nessun corso verranno ignorati.</small>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -314,6 +353,37 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+.sortable-header {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s ease;
+}
+
+.sortable-header:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sortable-header i {
+    font-size: 0.8em;
+    margin-left: 4px;
+}
+
+#searchLive {
+    border: 2px solid #dee2e6;
+    transition: border-color 0.2s ease;
+}
+
+#searchLive:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.search-loading {
+    border-color: #ffc107 !important;
+}
+</style>
+
 <script>
 function confermaEliminazione(nomeCliente, url) {
     document.getElementById('clienteNome').textContent = nomeCliente;
@@ -341,6 +411,80 @@ document.getElementById('search').addEventListener('input', function() {
 // Auto-submit quando cambia lo stato
 document.getElementById('stato').addEventListener('change', function() {
     document.getElementById('searchForm').submit();
+});
+
+// === FUNZIONI PER RICERCA LIVE E ORDINAMENTO ===
+
+let liveSearchTimeout;
+const searchInput = document.getElementById('searchLive');
+const searchForm = document.getElementById('searchForm');
+
+// Ricerca live con debouncing migliorato
+searchInput.addEventListener('input', function() {
+    clearTimeout(liveSearchTimeout);
+    
+    const searchValue = this.value;
+    
+    // Aggiungi classe di loading
+    this.classList.add('search-loading');
+    
+    liveSearchTimeout = setTimeout(() => {
+        // Aggiorna il campo hidden
+        document.getElementById('search').value = searchValue;
+        
+        // Reset alla pagina 1
+        document.querySelector('input[name="page"]').value = '1';
+        
+        // Submit del form
+        searchForm.submit();
+    }, 300); // 300ms di debouncing
+});
+
+// Funzione per ordinamento colonne
+function sortTable(column) {
+    const currentSortBy = '{{ sort_by }}';
+    const currentSortOrder = '{{ sort_order }}';
+    
+    let newSortOrder = 'asc';
+    
+    // Se stiamo cliccando sulla stessa colonna, invertiamo l'ordine
+    if (currentSortBy === column) {
+        newSortOrder = currentSortOrder === 'asc' ? 'desc' : 'asc';
+    }
+    
+    // Aggiorna i valori hidden
+    document.querySelector('input[name="sort_by"]').value = column;
+    document.querySelector('input[name="sort_order"]').value = newSortOrder;
+    document.querySelector('input[name="page"]').value = '1'; // Reset alla pagina 1
+    
+    // Submit del form
+    searchForm.submit();
+}
+
+// Migliora il feedback visivo durante il caricamento
+searchForm.addEventListener('submit', function() {
+    // Disabilita il form per evitare submit multipli
+    const buttons = this.querySelectorAll('button, input[type="submit"]');
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        if (btn.innerHTML.includes('Cerca')) {
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Cercando...';
+        }
+    });
+});
+
+// Ripristina il form se si torna indietro
+window.addEventListener('pageshow', function() {
+    const buttons = searchForm.querySelectorAll('button, input[type="submit"]');
+    buttons.forEach(btn => {
+        btn.disabled = false;
+        if (btn.innerHTML.includes('Cercando')) {
+            btn.innerHTML = '<i class="bi bi-search me-1"></i>Cerca';
+        }
+    });
+    
+    // Rimuovi classe loading dalla ricerca
+    searchInput.classList.remove('search-loading');
 });
 
 // === FUNZIONI PER GENERAZIONE RICEVUTE BULK ===

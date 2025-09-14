@@ -351,10 +351,21 @@ def clienti():
     stato = request.args.get('stato', 'tutti')
     page = request.args.get('page', 1, type=int)
     per_page = request.args.get('per_page', 25, type=int)
+    sort_by = request.args.get('sort_by', 'cognome')
+    sort_order = request.args.get('sort_order', 'asc')
     
     # Validazione per_page
     if per_page not in [10, 25, 50]:
         per_page = 25
+        
+    # Validazione sort_order
+    if sort_order not in ['asc', 'desc']:
+        sort_order = 'asc'
+        
+    # Validazione sort_by
+    valid_sort_fields = ['nome', 'cognome', 'email', 'codice_fiscale', 'telefono']
+    if sort_by not in valid_sort_fields:
+        sort_by = 'cognome'
     
     query = Cliente.query
     
@@ -362,7 +373,9 @@ def clienti():
         query = query.filter(
             (Cliente.nome.contains(search)) | 
             (Cliente.cognome.contains(search)) |
-            (Cliente.email.contains(search))
+            (Cliente.email.contains(search)) |
+            (Cliente.codice_fiscale.contains(search)) |
+            (Cliente.telefono.contains(search))
         )
     
     if stato == 'attivi':
@@ -370,8 +383,16 @@ def clienti():
     elif stato == 'inattivi':
         query = query.filter_by(attivo=False)
     
-    # Ordina per cognome, nome
-    query = query.order_by(Cliente.cognome, Cliente.nome)
+    # Ordinamento dinamico
+    sort_column = getattr(Cliente, sort_by)
+    if sort_order == 'desc':
+        query = query.order_by(sort_column.desc())
+    else:
+        query = query.order_by(sort_column.asc())
+    
+    # Ordinamento secondario per consistenza
+    if sort_by != 'cognome':
+        query = query.order_by(sort_column.desc() if sort_order == 'desc' else sort_column.asc(), Cliente.cognome)
     
     # Paginazione
     clienti = query.paginate(
@@ -384,7 +405,9 @@ def clienti():
                          clienti=clienti, 
                          search=search, 
                          stato=stato,
-                         per_page=per_page)
+                         per_page=per_page,
+                         sort_by=sort_by,
+                         sort_order=sort_order)
 
 @app.route('/clienti/nuovo', methods=['GET', 'POST'])
 @login_required
@@ -724,10 +747,16 @@ def genera_ricevute_bulk():
         
         ricevute_create = 0
         errori = []
+        clienti_senza_corsi = []
         
         for cliente_id in clienti_ids:
             cliente = Cliente.query.get_or_404(cliente_id)
             
+            # Controlla se il cliente ha corsi
+            if not cliente.corsi:
+                clienti_senza_corsi.append(cliente.nome_completo)
+                continue
+                
             # Per ogni corso del cliente
             for corso in cliente.corsi:
                 # Verifica se esiste già un pagamento per questo mese/anno/cliente/corso
@@ -764,11 +793,24 @@ def genera_ricevute_bulk():
         if ricevute_create > 0:
             flash(f'Create {ricevute_create} ricevute con successo!', 'success')
         
+        if clienti_senza_corsi:
+            if len(clienti_senza_corsi) == 1:
+                flash(f'{clienti_senza_corsi[0]} non è iscritto a nessun corso', 'warning')
+            else:
+                flash(f'{len(clienti_senza_corsi)} clienti non sono iscritti a nessun corso: {", ".join(clienti_senza_corsi[:3])}{"..." if len(clienti_senza_corsi) > 3 else ""}', 'warning')
+        
         if errori:
             for errore in errori[:5]:  # Mostra solo i primi 5 errori
                 flash(errore, 'warning')
             if len(errori) > 5:
                 flash(f'... e altri {len(errori) - 5} errori', 'warning')
+                
+        # Se non è stata creata nessuna ricevuta, mostra messaggio esplicativo
+        if ricevute_create == 0:
+            if clienti_senza_corsi and not errori:
+                flash('Nessuna ricevuta generata: i clienti selezionati devono essere prima iscritti ai corsi', 'info')
+            elif errori and not clienti_senza_corsi:
+                flash('Nessuna ricevuta generata: tutti i pagamenti esistono già per il periodo selezionato', 'info')
         
         return redirect(url_for('pagamenti'))
     
