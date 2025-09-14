@@ -134,6 +134,7 @@ else:
 
 # Flask-Security-Too Configuration
 app.config['SECURITY_PASSWORD_SALT'] = get_or_generate_key('SECURITY_PASSWORD_SALT')
+app.config['SECURITY_TRACKABLE'] = True  # Enable login tracking
 app.config['SECURITY_TWO_FACTOR_ENABLED_METHODS'] = ['email', 'authenticator']
 app.config['SECURITY_TWO_FACTOR'] = True
 app.config['SECURITY_TWO_FACTOR_RESCUE_EMAIL'] = 'admin@dance2manage.com'
@@ -1329,19 +1330,20 @@ def settings():
         settings.mail_suppress_send = bool(request.form.get('mail_suppress_send'))
         settings.mail_debug = bool(request.form.get('mail_debug'))
         
-        # Numerazione ricevute
-        nuovo_numero_iniziale = int(request.form.get('numero_ricevuta_iniziale', 1))
-        if nuovo_numero_iniziale != settings.numero_ricevuta_iniziale:
-            settings.numero_ricevuta_iniziale = nuovo_numero_iniziale
-            # Aggiorna anche la configurazione per l'anno corrente se necessario
-            from models.numerazione_ricevute import NumerazioneRicevute
-            from datetime import datetime
-            anno_corrente = datetime.now().year
-            try:
-                NumerazioneRicevute.imposta_numero_iniziale(anno_corrente, nuovo_numero_iniziale)
-            except ValueError:
-                # Se ci sono già ricevute emesse, non modificare il numero iniziale per l'anno corrente
-                pass
+        # Numerazione ricevute - solo se non sono già state emesse ricevute
+        if not settings.ricevute_gia_emesse():
+            nuovo_numero_iniziale = int(request.form.get('numero_ricevuta_iniziale', 1))
+            if nuovo_numero_iniziale != settings.numero_ricevuta_iniziale:
+                settings.numero_ricevuta_iniziale = nuovo_numero_iniziale
+                # Aggiorna anche la configurazione per l'anno corrente se necessario
+                from models.numerazione_ricevute import NumerazioneRicevute
+                from datetime import datetime
+                anno_corrente = datetime.now().year
+                try:
+                    NumerazioneRicevute.imposta_numero_iniziale(anno_corrente, nuovo_numero_iniziale)
+                except ValueError:
+                    # Se ci sono già ricevute emesse, non modificare il numero iniziale per l'anno corrente
+                    pass
         
         # Gestione caricamento logo
         from werkzeug.utils import secure_filename
@@ -1994,4 +1996,4 @@ if __name__ == '__main__':
         except ValueError:
             pass
     
-    app.run(host='127.0.0.1', port=port, debug=True)
+    app.run(host='127.0.0.1', port=port, debug=False)
