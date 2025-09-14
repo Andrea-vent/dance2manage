@@ -20,3 +20,4 @@ from .corso import Corso
 from .insegnante import Insegnante
 from .pagamento import Pagamento
 from .settings import Settings
+from .numerazione_ricevute import NumerazioneRicevute

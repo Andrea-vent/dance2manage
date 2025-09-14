@@ -16,6 +16,7 @@ class Pagamento(db.Model):
     data_creazione = Column(DateTime, default=datetime.now)
     metodo_pagamento = Column(String(50), default='Contanti')  # Contanti, Bonifico, Bancomat, Carta di credito
     note = Column(String(500))
+    numero_ricevuta = Column(Integer, nullable=True)  # Numero ricevuta (assegnato quando pagato=True)
     
     # Chiavi esterne
     cliente_id = Column(Integer, ForeignKey('clienti.id'), nullable=False)
@@ -44,3 +45,9 @@ class Pagamento(db.Model):
     def marca_pagato(self):
         self.pagato = True
         self.data_pagamento = datetime.now()
+        
+        # Assegna numero ricevuta solo se non è già assegnato
+        if not self.numero_ricevuta:
+            from .numerazione_ricevute import NumerazioneRicevute
+            anno_ricevuta = self.data_pagamento.year
+            self.numero_ricevuta = NumerazioneRicevute.get_prossimo_numero(anno_ricevuta)

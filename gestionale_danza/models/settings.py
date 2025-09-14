@@ -1,6 +1,8 @@
 # models/settings.py
 from . import db
 from sqlalchemy import Column, Integer, String, Text, Boolean
+import os
+from cryptography.fernet import Fernet
 
 class Settings(db.Model):
     __tablename__ = 'settings'
@@ -31,6 +33,9 @@ class Settings(db.Model):
     mail_suppress_send = Column(Boolean, default=True)  # Disabilita invio in sviluppo
     mail_debug = Column(Boolean, default=False)  # Debug mode per mail
     
+    # Numerazione Ricevute
+    numero_ricevuta_iniziale = Column(Integer, default=1)  # Numero da cui iniziare la numerazione ricevute
+    
     def __repr__(self):
         return f'<Settings {self.denominazione_sociale}>'
     
@@ -47,6 +52,33 @@ class Settings(db.Model):
         if self.provincia:
             parti.append(f"({self.provincia})")
         return ', '.join(parti) if parti else None
+    
+    @staticmethod
+    def _get_encryption_key():
+        """Ottiene chiave di cifratura per database"""
+        key = os.environ.get('DATABASE_ENCRYPTION_KEY')
+        if not key:
+            key = Fernet.generate_key().decode()
+            print(f"⚠️ DATABASE_ENCRYPTION_KEY non trovata! Generata: {key}")
+        return key.encode() if isinstance(key, str) else key
+    
+    def set_mail_password(self, password):
+        """Imposta password email cifrata"""
+        if password:
+            fernet = Fernet(self._get_encryption_key())
+            self.mail_password = fernet.encrypt(password.encode()).decode()
+        else:
+            self.mail_password = None
+    
+    def get_mail_password(self):
+        """Ottiene password email decifrata"""
+        if not self.mail_password:
+            return None
+        try:
+            fernet = Fernet(self._get_encryption_key())
+            return fernet.decrypt(self.mail_password.encode()).decode()
+        except:
+            return None
     
     @property
     def mail_configured(self):
@@ -82,7 +114,9 @@ class Settings(db.Model):
                 mail_default_sender='',
                 mail_max_emails=100,
                 mail_suppress_send=True,
-                mail_debug=False
+                mail_debug=False,
+                # Numerazione ricevute
+                numero_ricevuta_iniziale=1
             )
             db.session.add(settings)
             db.session.commit()

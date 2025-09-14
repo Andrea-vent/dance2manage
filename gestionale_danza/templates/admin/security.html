@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Amministrazione Sicurezza{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        Amministrazione Sicurezza
+                    </h1>
+                    <p class="text-muted">Gestione IP bloccati e protezione brute force</p>
+                </div>
+                
+                {% if blocked_ips %}
+                <div>
+                    <a href="{{ url_for('clear_all_blocked_ips') }}" 
+                       class="btn btn-warning"
+                       onclick="return confirm('Sei sicuro di voler sbloccare tutti gli IP?')">
+                        <i class="fas fa-unlock me-2"></i>
+                        Sblocca Tutti
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Configurazione Brute Force -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-cogs me-2"></i>
+                        Configurazione Brute Force Protection
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-primary rounded-circle p-2 me-3">
+                                    <i class="fas fa-ban text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Tentativi Massimi</h6>
+                                    <span class="text-muted">{{ max_attempts }} tentativi</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-warning rounded-circle p-2 me-3">
+                                    <i class="fas fa-clock text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Durata Blocco</h6>
+                                    <span class="text-muted">{{ lockout_minutes }} minuti</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="bg-{{ 'danger' if blocked_ips else 'success' }} rounded-circle p-2 me-3">
+                                    <i class="fas fa-{{ 'exclamation-triangle' if blocked_ips else 'check' }} text-white"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">IP Bloccati</h6>
+                                    <span class="text-muted">{{ blocked_ips|length }} indirizzi</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista IP Bloccati -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        IP Bloccati ({{ blocked_ips|length }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if blocked_ips %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th><i class="fas fa-globe me-2"></i>Indirizzo IP</th>
+                                    <th><i class="fas fa-exclamation-circle me-2"></i>Tentativi</th>
+                                    <th><i class="fas fa-calendar-alt me-2"></i>Ultimo Tentativo</th>
+                                    <th><i class="fas fa-clock me-2"></i>Tempo Rimanente</th>
+                                    <th><i class="fas fa-tools me-2"></i>Azioni</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for blocked_ip in blocked_ips %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-danger rounded-circle p-1 me-2">
+                                                <i class="fas fa-ban text-white fa-xs"></i>
+                                            </div>
+                                            <code class="text-primary">{{ blocked_ip.ip }}</code>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-danger">
+                                            {{ blocked_ip.attempts }} / {{ max_attempts }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <small class="text-muted">
+                                            {{ blocked_ip.last_attempt.strftime('%H:%M:%S - %d/%m/%Y') }}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        {% if blocked_ip.remaining_minutes > 0 or blocked_ip.remaining_seconds > 0 %}
+                                        <span class="badge bg-warning text-dark">
+                                            {% if blocked_ip.remaining_minutes > 0 %}
+                                                {{ blocked_ip.remaining_minutes }}m {{ blocked_ip.remaining_seconds }}s
+                                            {% else %}
+                                                {{ blocked_ip.remaining_seconds }}s
+                                            {% endif %}
+                                        </span>
+                                        {% else %}
+                                        <span class="badge bg-success">Scaduto</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('unblock_ip', ip=blocked_ip.ip) }}" 
+                                           class="btn btn-sm btn-outline-success"
+                                           onclick="return confirm('Sei sicuro di voler sbloccare {{ blocked_ip.ip }}?')"
+                                           title="Sblocca IP">
+                                            <i class="fas fa-unlock"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-shield-alt fa-3x text-success"></i>
+                        </div>
+                        <h5 class="text-muted">Nessun IP bloccato</h5>
+                        <p class="text-muted mb-0">
+                            Il sistema di protezione brute force è attivo ma non ci sono IP bloccati al momento.
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if blocked_ips %}
+                <div class="card-footer text-muted">
+                    <small>
+                        <i class="fas fa-info-circle me-1"></i>
+                        Gli IP si sbloccano automaticamente dopo {{ lockout_minutes }} minuti dall'ultimo tentativo fallito.
+                        La lista viene aggiornata automaticamente ogni 30 secondi.
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if blocked_ips %}
+<script>
+// Auto-refresh ogni 30 secondi per aggiornare i tempi rimanenti
+setTimeout(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endif %}
+{% endblock %}

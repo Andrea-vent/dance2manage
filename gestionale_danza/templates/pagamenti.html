@@ -45,9 +45,16 @@
                     </div>
                     
                     <!-- Seconda riga: Filtri esistenti -->
+                    <div class="col-md-3">
+                        <label for="data_specifica" class="form-label">Data Specifica</label>
+                        <input type="date" class="form-control" id="data_specifica" name="data_specifica" 
+                               value="{% if data_specifica %}{{ data_specifica }}{% elif giorno_filtro and mese_filtro and anno_filtro %}{{ '%04d-%02d-%02d'|format(anno_filtro, mese_filtro, giorno_filtro) }}{% endif %}"
+                               onchange="this.form.submit()">
+                        <small class="form-text text-muted">Filtra pagamenti per data specifica</small>
+                    </div>
                     <div class="col-md-2">
                         <label for="mese" class="form-label">Mese</label>
-                        <select class="form-select" id="mese" name="mese">
+                        <select class="form-select" id="mese" name="mese" onchange="clearDataSpecifica()">
                             <option value="">Tutti</option>
                             {% for i in range(1, 13) %}
                             <option value="{{ i }}" {% if mese_filtro == i %}selected{% endif %}>
@@ -59,7 +66,7 @@
                     </div>
                     <div class="col-md-2">
                         <label for="anno" class="form-label">Anno</label>
-                        <select class="form-select" id="anno" name="anno">
+                        <select class="form-select" id="anno" name="anno" onchange="clearDataSpecifica()">
                             <option value="">Tutti</option>
                             {% for anno in range(2020, 2030) %}
                             <option value="{{ anno }}" {% if anno_filtro == anno %}selected{% endif %}>{{ anno }}</option>
@@ -106,6 +113,24 @@
         </div>
     </div>
 </div>
+
+<!-- Totale giornaliero -->
+{% if giorno_filtro and mese_filtro and anno_filtro %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center">
+            <i class="bi bi-calendar-day me-3 fs-4"></i>
+            <div>
+                <h5 class="alert-heading mb-1">
+                    Totale Incassato il {{ giorno_filtro }}/{{ mese_filtro }}/{{ anno_filtro }}
+                </h5>
+                <h3 class="mb-0 text-primary">{{ totale_giornaliero|euro }}</h3>
+                <small class="text-muted">Solo pagamenti effettuati</small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Statistiche rapide -->
 {% if pagamenti %}
@@ -169,6 +194,14 @@
                                 <i class="bi bi-chevron-expand text-muted"></i>
                             {% endif %}
                         </th>
+                        <th class="sortable-header" onclick="sortTable('numero_ricevuta')">
+                            N. Ricevuta
+                            {% if sort_by == 'numero_ricevuta' %}
+                                <i class="bi bi-chevron-{{ 'up' if sort_order == 'asc' else 'down' }}"></i>
+                            {% else %}
+                                <i class="bi bi-chevron-expand text-muted"></i>
+                            {% endif %}
+                        </th>
                         <th class="sortable-header" onclick="sortTable('importo')">
                             Importo
                             {% if sort_by == 'importo' %}
@@ -202,6 +235,13 @@
                         <td>{{ pagamento.periodo }}</td>
                         <td>{{ pagamento.cliente.nome_completo }}</td>
                         <td>{{ pagamento.corso.nome }}</td>
+                        <td class="text-center">
+                            {% if pagamento.numero_ricevuta %}
+                                <span class="badge bg-primary">#{{ pagamento.numero_ricevuta }}</span>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
                         <td><strong>{{ pagamento.importo|euro }}</strong></td>
                         <td>
                             {% if pagamento.pagato %}
@@ -556,6 +596,11 @@ window.addEventListener('pageshow', function() {
         searchInput.classList.remove('search-loading');
     }
 });
+
+// Funzione per pulire il campo data specifica quando si usano filtri mese/anno
+function clearDataSpecifica() {
+    document.getElementById('data_specifica').value = '';
+}
 
 // === FUNZIONI PER INVIO EMAIL RICEVUTE ===
 

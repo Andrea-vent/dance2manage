@@ -17,16 +17,15 @@ def format_currency_it(value):
     except (ValueError, TypeError):
         return "€0,00"
 
-def genera_ricevuta_pdf(pagamento, pdf_folder):
+def genera_ricevuta_pdf(pagamento, pdf_folder=None):
     """
     Genera una ricevuta PDF per il pagamento specificato
-    Supporta sia WeasyPrint che ReportLab come fallback
+    Restituisce (pdf_content, filename) per streaming diretto
     """
     
     # Numerazione progressiva delle ricevute
-    ricevuta_numero = f"{pagamento.id:05d}"
+    ricevuta_numero = f"{pagamento.numero_ricevuta:05d}" if pagamento.numero_ricevuta else f"ID{pagamento.id:05d}"
     filename = f"RICEVUTA-{ricevuta_numero}.pdf"
-    pdf_path = os.path.join(pdf_folder, filename)
     
     # Importa Settings qui per evitare circular imports
     from models.settings import Settings
@@ -45,13 +44,127 @@ def genera_ricevuta_pdf(pagamento, pdf_folder):
     
     try:
         # Prova prima con WeasyPrint (preferito)
-        return genera_pdf_weasyprint(context, pdf_path)
+        return genera_pdf_weasyprint_memory(context, filename)
     except Exception as e:
         try:
             # Fallback su ReportLab
-            return genera_pdf_reportlab(pagamento, pdf_path, ricevuta_numero)
+            return genera_pdf_reportlab_memory(pagamento, ricevuta_numero, filename)
         except Exception as e2:
             raise Exception(f"Impossibile generare PDF: WeasyPrint={e}, ReportLab={e2}")
+
+def genera_pdf_weasyprint_memory(context, filename):
+    """Genera PDF usando WeasyPrint in memoria"""
+    import io
+    try:
+        import weasyprint
+        from flask import render_template
+        import os
+        
+        # Aggiungi il path assoluto del logo al context per WeasyPrint
+        if context.get('settings') and context['settings'].logo_filename:
+            logo_absolute_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads', context['settings'].logo_filename)
+            context['logo_absolute_path'] = f"file://{os.path.abspath(logo_absolute_path)}"
+        
+        # Render del template HTML
+        html_content = render_template('ricevuta.html', **context)
+        
+        # Conversione in PDF in memoria
+        pdf_doc = weasyprint.HTML(string=html_content)
+        pdf_buffer = io.BytesIO()
+        pdf_doc.write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        
+        return pdf_buffer.getvalue(), filename
+        
+    except ImportError:
+        raise Exception("WeasyPrint non è installato")
+    except Exception as e:
+        raise Exception(f"Errore WeasyPrint: {str(e)}")
+
+def genera_pdf_reportlab_memory(pagamento, ricevuta_numero, filename):
+    """Genera PDF usando ReportLab in memoria"""
+    import io
+    try:
+        from reportlab.lib.pagesizes import A4
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib.units import inch
+        from reportlab.lib import colors
+        from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+        from models.settings import Settings
+        
+        # Buffer in memoria
+        buffer = io.BytesIO()
+        
+        # Ottieni le impostazioni aziendali
+        settings = Settings.get_settings()
+        
+        # Crea il documento PDF
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        story = []
+        
+        # Titolo
+        title_style = ParagraphStyle(
+            'CustomTitle',
+            parent=styles['Heading1'],
+            fontSize=18,
+            spaceAfter=30,
+            alignment=TA_CENTER,
+            textColor=colors.darkblue
+        )
+        
+        story.append(Paragraph(f"RICEVUTA PAGAMENTO N° {ricevuta_numero}", title_style))
+        story.append(Spacer(1, 20))
+        
+        # Informazioni azienda
+        if settings:
+            company_info = f"<b>{settings.denominazione_sociale}</b><br/>"
+            if settings.indirizzo_completo:
+                company_info += f"{settings.indirizzo_completo}<br/>"
+            if settings.telefono:
+                company_info += f"Tel: {settings.telefono}<br/>"
+            if settings.email:
+                company_info += f"Email: {settings.email}"
+            
+            story.append(Paragraph(company_info, styles['Normal']))
+            story.append(Spacer(1, 20))
+        
+        # Dettagli pagamento
+        data_table = [
+            ['Cliente:', pagamento.cliente.nome_completo],
+            ['Corso:', pagamento.corso.nome],
+            ['Periodo:', pagamento.periodo],
+            ['Importo:', format_currency_it(pagamento.importo)],
+            ['Data Pagamento:', pagamento.data_pagamento.strftime('%d/%m/%Y') if pagamento.data_pagamento else 'N/D'],
+            ['Metodo:', pagamento.metodo_pagamento or 'Contanti']
+        ]
+        
+        table = Table(data_table, colWidths=[2*inch, 4*inch])
+        table.setStyle(TableStyle([
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        
+        story.append(table)
+        story.append(Spacer(1, 30))
+        
+        # Footer
+        footer_text = f"Data emissione: {datetime.now().strftime('%d/%m/%Y')}"
+        story.append(Paragraph(footer_text, styles['Normal']))
+        
+        # Genera PDF
+        doc.build(story)
+        buffer.seek(0)
+        
+        return buffer.getvalue(), filename
+        
+    except ImportError:
+        raise Exception("ReportLab non è installato")
+    except Exception as e:
+        raise Exception(f"Errore ReportLab: {str(e)}")
 
 def genera_pdf_weasyprint(context, pdf_path):
     """Genera PDF usando WeasyPrint"""

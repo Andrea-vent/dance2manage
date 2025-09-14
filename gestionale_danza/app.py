@@ -10,9 +10,15 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_security import Security, SQLAlchemyUserDatastore, login_required as security_login_required, roles_required
 from flask_mailman import Mail
 from flask_toastr import Toastr
+from flask_talisman import Talisman
 from models import db, User, Role, WebAuthn, Cliente, Corso, Insegnante, Pagamento, Settings
 from utils.stampa_pdf import genera_ricevuta_pdf
 import tempfile
+from cryptography.fernet import Fernet
+import base64
+import secrets
+from collections import defaultdict
+import time
 
 # Configurazione percorsi per PyInstaller
 if getattr(sys, 'frozen', False):
@@ -26,13 +32,108 @@ else:
     template_folder = os.path.join(base_path, 'templates')
     static_folder = os.path.join(base_path, 'static')
 
+# === SECURITY UTILITIES ===
+
+def load_env_variables():
+    """Carica variabili d'ambiente da file .env se presente"""
+    env_path = os.path.join(base_path, '.env')
+    if os.path.exists(env_path):
+        with open(env_path, 'r') as f:
+            for line in f:
+                if '=' in line and not line.startswith('#'):
+                    key, value = line.strip().split('=', 1)
+                    os.environ[key] = value
+
+def get_or_generate_key(env_var_name, key_length=32):
+    """Ottiene chiave dall'ambiente o ne genera una sicura"""
+    key = os.environ.get(env_var_name)
+    if not key:
+        key = secrets.token_urlsafe(key_length)
+        print(f"⚠️ {env_var_name} non trovata! Generata automaticamente: {key}")
+        print(f"💡 Aggiungi al file .env: {env_var_name}={key}")
+    return key
+
+def get_encryption_key():
+    """Ottiene chiave di cifratura per database"""
+    key = os.environ.get('DATABASE_ENCRYPTION_KEY')
+    if not key:
+        key = Fernet.generate_key().decode()
+        print(f"⚠️ DATABASE_ENCRYPTION_KEY non trovata! Generata: {key}")
+        print(f"💡 Aggiungi al file .env: DATABASE_ENCRYPTION_KEY={key}")
+    return key.encode() if isinstance(key, str) else key
+
+def encrypt_password(password):
+    """Cifra una password"""
+    if not password:
+        return None
+    fernet = Fernet(get_encryption_key())
+    return fernet.encrypt(password.encode()).decode()
+
+def decrypt_password(encrypted_password):
+    """Decifra una password"""
+    if not encrypted_password:
+        return None
+    try:
+        fernet = Fernet(get_encryption_key())
+        return fernet.decrypt(encrypted_password.encode()).decode()
+    except:
+        return None
+
+# Sistema di protezione brute force
+login_attempts = defaultdict(list)
+MAX_LOGIN_ATTEMPTS = int(os.environ.get('MAX_LOGIN_ATTEMPTS', 5))
+LOCKOUT_DURATION = int(os.environ.get('LOGIN_LOCKOUT_DURATION', 900))  # 15 minuti
+
+def is_ip_locked(ip_address):
+    """Verifica se IP è bloccato per troppi tentativi"""
+    now = time.time()
+    attempts = login_attempts[ip_address]
+    
+    # Rimuovi tentativi vecchi
+    attempts = [attempt for attempt in attempts if now - attempt < LOCKOUT_DURATION]
+    login_attempts[ip_address] = attempts
+    
+    return len(attempts) >= MAX_LOGIN_ATTEMPTS
+
+def record_failed_login(ip_address):
+    """Registra tentativo di login fallito"""
+    login_attempts[ip_address].append(time.time())
+
+def reset_login_attempts(ip_address):
+    """Reset tentativi dopo login riuscito"""
+    login_attempts[ip_address] = []
+
+# Carica variabili d'ambiente
+load_env_variables()
+
 # Inizializza Flask
 app = Flask(__name__, template_folder=template_folder, static_folder=static_folder)
-app.secret_key = 'chiave-segreta-danza-2024'
+app.secret_key = get_or_generate_key('SECRET_KEY')
 # app.config['DEBUG'] = True  # Disabled debug mode
 
+# Configurazione sicurezza HTTPS
+force_https = os.environ.get('FORCE_HTTPS', 'False').lower() == 'true'
+disable_talisman_for_test = os.environ.get('DISABLE_TALISMAN_FOR_TEST', 'False').lower() == 'true'
+
+if force_https and not disable_talisman_for_test:
+    # Configurazione Talisman per HTTPS enforcement
+    csp = {
+        'default-src': "'self'",
+        'script-src': "'self' 'unsafe-inline' 'unsafe-eval'",
+        'style-src': "'self' 'unsafe-inline'",
+        'img-src': "'self' data:",
+        'font-src': "'self'",
+        'connect-src': "'self'"
+    }
+    Talisman(app, force_https=True, content_security_policy=csp)
+    print("🔒 HTTPS enforcement attivato con Flask-Talisman")
+elif disable_talisman_for_test:
+    print("🧪 Flask-Talisman disabilitato per test")
+else:
+    print("⚠️ HTTPS enforcement disabilitato (set FORCE_HTTPS=True per attivare)")
+
 # Flask-Security-Too Configuration
-app.config['SECURITY_PASSWORD_SALT'] = 'danza-security-salt-2024'
+app.config['SECURITY_PASSWORD_SALT'] = get_or_generate_key('SECURITY_PASSWORD_SALT')
 app.config['SECURITY_TWO_FACTOR_ENABLED_METHODS'] = ['email', 'authenticator']
 app.config['SECURITY_TWO_FACTOR'] = True
 app.config['SECURITY_TWO_FACTOR_RESCUE_EMAIL'] = 'admin@dance2manage.com'
@@ -51,7 +152,7 @@ app.config['SECURITY_EMAIL_VALIDATOR_ARGS'] = {'check_deliverability': False}
 app.config['SECURITY_LOGIN_WITHOUT_CONFIRMATION'] = True
 
 # TOTP Configuration for 2FA
-app.config['SECURITY_TOTP_SECRETS'] = {'1': 'dance2manage-secret-key-2024'}
+app.config['SECURITY_TOTP_SECRETS'] = {'1': get_or_generate_key('SECURITY_TOTP_SECRET')}
 app.config['SECURITY_TOTP_ISSUER'] = 'Dance2Manage'
 app.config['SECURITY_TWO_FACTOR_REQUIRED'] = False  # Make 2FA optional
 
@@ -83,6 +184,71 @@ db.init_app(app)
 # Setup Flask-Security-Too (standard)
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
+
+# Hook per protezione brute force  
+from flask_security.signals import user_authenticated, login_instructions_sent
+from flask import request, abort, flash
+
+def is_ip_locked(ip):
+    """Verifica se un IP è bloccato per troppi tentativi"""
+    if ip not in login_attempts:
+        return False
+    
+    now = datetime.now()
+    # Rimuovi tentativi troppo vecchi
+    login_attempts[ip] = [attempt for attempt in login_attempts[ip] 
+                         if (now - attempt).total_seconds() < LOCKOUT_DURATION]
+    
+    return len(login_attempts[ip]) >= MAX_LOGIN_ATTEMPTS
+
+def record_failed_login(ip):
+    """Registra un tentativo di login fallito"""
+    login_attempts[ip].append(datetime.now())
+
+@app.before_request
+def check_brute_force():
+    """Controlla brute force prima di ogni richiesta alle rotte di login"""
+    if request.endpoint == 'security.login':
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        if is_ip_locked(client_ip):
+            print(f"🚫 Tentativo di accesso bloccato per IP: {client_ip}")
+            flash(f'Troppi tentativi di accesso. Riprova tra {LOCKOUT_DURATION//60} minuti.', 'error')
+            return render_template('errors/429.html', lockout_minutes=LOCKOUT_DURATION//60), 429
+
+@user_authenticated.connect_via(app)
+def on_user_authenticated(sender, user, **extra):
+    """Pulisce tentativi falliti dopo login riuscito"""
+    client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+    if client_ip in login_attempts:
+        del login_attempts[client_ip]
+
+# Gestione errori per brute force protection
+@app.errorhandler(429)
+def handle_rate_limit(error):
+    """Gestisce richieste limitate per brute force protection"""
+    return render_template('errors/429.html', lockout_minutes=LOCKOUT_DURATION//60), 429
+
+# Intercetta tentativi di login falliti con after_request
+@app.after_request
+def track_login_attempts(response):
+    """Traccia tentativi di login falliti"""
+    if (request.endpoint == 'security.login' and 
+        request.method == 'POST' and 
+        response.status_code == 200):  # 200 = rimane sulla pagina di login = fallito
+        
+        client_ip = request.environ.get('HTTP_X_FORWARDED_FOR', request.remote_addr)
+        
+        # Registra tentativo fallito
+        record_failed_login(client_ip)
+        print(f"🔒 Login fallito registrato per IP: {client_ip}")
+        
+        # Controlla se deve essere bloccato
+        if is_ip_locked(client_ip):
+            print(f"🚫 IP {client_ip} bloccato dopo troppi tentativi")
+            # Modifica la risposta per mostrare il blocco
+            flash(f'Troppi tentativi di accesso. IP bloccato per {LOCKOUT_DURATION//60} minuti.', 'error')
+            
+    return response
 
 # Initialize Mail
 mail = Mail(app)
@@ -145,7 +311,7 @@ def update_mail_config(settings):
         app.config['MAIL_USE_TLS'] = settings.mail_use_tls
         app.config['MAIL_USE_SSL'] = settings.mail_use_ssl
         app.config['MAIL_USERNAME'] = settings.mail_username
-        app.config['MAIL_PASSWORD'] = settings.mail_password
+        app.config['MAIL_PASSWORD'] = settings.get_mail_password()
         app.config['MAIL_DEFAULT_SENDER'] = settings.mail_default_sender
         app.config['MAIL_MAX_EMAILS'] = settings.mail_max_emails
         app.config['MAIL_SUPPRESS_SEND'] = settings.mail_suppress_send
@@ -247,6 +413,63 @@ def gestione_utenti():
     users = User.query.all()
     roles = Role.query.all()
     return render_template('admin/users.html', users=users, roles=roles)
+
+@app.route('/admin/security')
+@login_required
+@roles_required('admin')
+def admin_security():
+    """Pagina amministrazione sicurezza - visualizza IP bloccati"""
+    from flask_security import current_user
+    
+    # Prepara dati sugli IP bloccati
+    blocked_ips = []
+    now = datetime.now()
+    
+    for ip, attempts in login_attempts.items():
+        # Rimuovi tentativi scaduti
+        valid_attempts = [attempt for attempt in attempts 
+                         if (now - attempt).total_seconds() < LOCKOUT_DURATION]
+        login_attempts[ip] = valid_attempts
+        
+        if len(valid_attempts) >= MAX_LOGIN_ATTEMPTS:
+            last_attempt = max(valid_attempts)
+            remaining_time = LOCKOUT_DURATION - (now - last_attempt).total_seconds()
+            
+            blocked_ips.append({
+                'ip': ip,
+                'attempts': len(valid_attempts),
+                'last_attempt': last_attempt,
+                'remaining_minutes': max(0, int(remaining_time / 60)),
+                'remaining_seconds': max(0, int(remaining_time % 60))
+            })
+    
+    return render_template('admin/security.html', 
+                         blocked_ips=blocked_ips,
+                         max_attempts=MAX_LOGIN_ATTEMPTS,
+                         lockout_minutes=LOCKOUT_DURATION//60)
+
+@app.route('/admin/security/unblock/<ip>')
+@login_required
+@roles_required('admin')
+def unblock_ip(ip):
+    """Sblocca un IP specifico"""
+    if ip in login_attempts:
+        del login_attempts[ip]
+        flash(f'IP {ip} sbloccato con successo', 'success')
+    else:
+        flash(f'IP {ip} non era bloccato', 'info')
+    
+    return redirect(url_for('admin_security'))
+
+@app.route('/admin/security/clear-all')
+@login_required
+@roles_required('admin')
+def clear_all_blocked_ips():
+    """Sblocca tutti gli IP"""
+    count = len(login_attempts)
+    login_attempts.clear()
+    flash(f'{count} IP sbloccati con successo', 'success')
+    return redirect(url_for('admin_security'))
 
 @app.route('/admin/users/new', methods=['GET', 'POST'])
 @login_required
@@ -635,6 +858,19 @@ def pagamenti():
     # Parametri di filtro esistenti
     mese = request.args.get('mese', type=int)
     anno = request.args.get('anno', type=int) 
+    giorno = request.args.get('giorno', type=int)  # Nuovo filtro per giorno
+    data_specifica = request.args.get('data_specifica')  # HTML5 date input formato YYYY-MM-DD
+    
+    # Se viene fornita data_specifica, sovrascrive giorno/mese/anno
+    if data_specifica:
+        try:
+            from datetime import datetime
+            data_obj = datetime.strptime(data_specifica, '%Y-%m-%d')
+            giorno = data_obj.day
+            mese = data_obj.month
+            anno = data_obj.year
+        except (ValueError, TypeError):
+            data_specifica = None
     cliente_id = request.args.get('cliente_id', type=int)
     corso_id = request.args.get('corso_id', type=int)
     
@@ -653,7 +889,7 @@ def pagamenti():
         sort_order = 'desc'
     
     # Campi ordinabili
-    valid_sort_fields = ['periodo', 'cliente', 'corso', 'importo', 'stato', 'data_pagamento', 'data_creazione']
+    valid_sort_fields = ['periodo', 'cliente', 'corso', 'numero_ricevuta', 'importo', 'stato', 'data_pagamento', 'data_creazione']
     if sort_by not in valid_sort_fields:
         sort_by = 'data_creazione'
     
@@ -665,6 +901,14 @@ def pagamenti():
         query = query.filter(Pagamento.mese == mese)
     if anno:
         query = query.filter(Pagamento.anno == anno)
+    if giorno and mese and anno:
+        # Filtro per data specifica (giorno/mese/anno)
+        from datetime import date
+        try:
+            data_specifica = date(anno, mese, giorno)
+            query = query.filter(db.func.date(Pagamento.data_pagamento) == data_specifica)
+        except (ValueError, TypeError):
+            pass  # Ignora date non valide
     if cliente_id:
         query = query.filter(Pagamento.cliente_id == cliente_id)
     if corso_id:
@@ -696,6 +940,9 @@ def pagamenti():
     elif sort_by == 'corso':
         sort_column = Corso.nome.desc() if sort_order == 'desc' else Corso.nome.asc()
         query = query.order_by(sort_column)
+    elif sort_by == 'numero_ricevuta':
+        sort_column = Pagamento.numero_ricevuta.desc() if sort_order == 'desc' else Pagamento.numero_ricevuta.asc()
+        query = query.order_by(sort_column)
     elif sort_by == 'importo':
         sort_column = Pagamento.importo.desc() if sort_order == 'desc' else Pagamento.importo.asc()
         query = query.order_by(sort_column)
@@ -716,6 +963,20 @@ def pagamenti():
         error_out=False
     )
     
+    # Calcola il totale incassato per il giorno (solo pagamenti effettuati)
+    totale_giornaliero = 0
+    if giorno and mese and anno:
+        from datetime import date
+        try:
+            data_specifica = date(anno, mese, giorno)
+            pagamenti_giorno = Pagamento.query.filter(
+                db.func.date(Pagamento.data_pagamento) == data_specifica,
+                Pagamento.pagato == True
+            ).all()
+            totale_giornaliero = sum(p.importo for p in pagamenti_giorno)
+        except (ValueError, TypeError):
+            totale_giornaliero = 0
+    
     # Dati per select
     clienti = Cliente.query.filter_by(attivo=True).order_by(Cliente.cognome, Cliente.nome).all()
     corsi = Corso.query.order_by(Corso.nome).all()
@@ -727,6 +988,9 @@ def pagamenti():
                          corsi=corsi,
                          mese_filtro=mese,
                          anno_filtro=anno,
+                         giorno_filtro=giorno,
+                         data_specifica=data_specifica,
+                         totale_giornaliero=totale_giornaliero,
                          cliente_filtro=cliente_id,
                          corso_filtro=corso_id,
                          search=search,
@@ -811,11 +1075,23 @@ def elimina_pagamento(id):
 @app.route('/pagamenti/<int:id>/ricevuta')
 @login_required
 def genera_ricevuta(id):
+    from flask import Response
+    import io
+    
     pagamento = Pagamento.query.get_or_404(id)
     
     try:
-        pdf_path = genera_ricevuta_pdf(pagamento, pdf_folder)
-        return send_file(pdf_path, as_attachment=True)
+        pdf_content, filename = genera_ricevuta_pdf(pagamento)
+        
+        # Crea response con il PDF in memoria
+        return Response(
+            pdf_content,
+            mimetype='application/pdf',
+            headers={
+                'Content-Disposition': f'attachment; filename="{filename}"',
+                'Content-Type': 'application/pdf'
+            }
+        )
     except Exception as e:
         flash(f'Errore nella generazione della ricevuta: {str(e)}', 'error')
         return redirect(url_for('pagamenti'))
@@ -849,11 +1125,8 @@ def invia_ricevuta_email(id):
         # Aggiorna configurazione email
         update_mail_config(settings)
         
-        # Genera PDF della ricevuta
-        pdf_path = genera_ricevuta_pdf(pagamento, pdf_folder)
-        
-        if not os.path.exists(pdf_path):
-            return jsonify({'success': False, 'message': 'Errore nella generazione del PDF della ricevuta'})
+        # Genera PDF della ricevuta in memoria
+        pdf_content, filename = genera_ricevuta_pdf(pagamento)
         
         # Prepara il contenuto dell'email
         subject = f"Ricevuta Pagamento #{pagamento.numero_ricevuta:05d} - {settings.denominazione_sociale}"
@@ -886,14 +1159,12 @@ Grazie per aver scelto {settings.denominazione_sociale}!
             to=[pagamento.cliente.email]
         )
         
-        # Allega il PDF
-        with open(pdf_path, 'rb') as pdf_file:
-            pdf_content = pdf_file.read()
-            msg.attach(
-                f"RICEVUTA-{pagamento.numero_ricevuta:05d}.pdf", 
-                pdf_content, 
-                'application/pdf'
-            )
+        # Allega il PDF (già in memoria)
+        msg.attach(
+            filename, 
+            pdf_content, 
+            'application/pdf'
+        )
         
         # Invia email
         if not settings.mail_suppress_send:
@@ -1049,11 +1320,28 @@ def settings():
         settings.mail_use_tls = bool(request.form.get('mail_use_tls'))
         settings.mail_use_ssl = bool(request.form.get('mail_use_ssl'))
         settings.mail_username = request.form.get('mail_username', '').strip()
-        settings.mail_password = request.form.get('mail_password', '').strip()
+        # Gestione password email cifrata
+        new_password = request.form.get('mail_password', '').strip()
+        if new_password:
+            settings.set_mail_password(new_password)
         settings.mail_default_sender = request.form.get('mail_default_sender', '').strip()
         settings.mail_max_emails = int(request.form.get('mail_max_emails', 100))
         settings.mail_suppress_send = bool(request.form.get('mail_suppress_send'))
         settings.mail_debug = bool(request.form.get('mail_debug'))
+        
+        # Numerazione ricevute
+        nuovo_numero_iniziale = int(request.form.get('numero_ricevuta_iniziale', 1))
+        if nuovo_numero_iniziale != settings.numero_ricevuta_iniziale:
+            settings.numero_ricevuta_iniziale = nuovo_numero_iniziale
+            # Aggiorna anche la configurazione per l'anno corrente se necessario
+            from models.numerazione_ricevute import NumerazioneRicevute
+            from datetime import datetime
+            anno_corrente = datetime.now().year
+            try:
+                NumerazioneRicevute.imposta_numero_iniziale(anno_corrente, nuovo_numero_iniziale)
+            except ValueError:
+                # Se ci sono già ricevute emesse, non modificare il numero iniziale per l'anno corrente
+                pass
         
         # Gestione caricamento logo
         from werkzeug.utils import secure_filename
@@ -1199,7 +1487,7 @@ def help_page():
     return render_template('help.html')
 
 # REPORTS ROUTES
-def genera_report_data(mese_filtro, anno_filtro):
+def genera_report_data(mese_filtro, anno_filtro, data_specifica=None, tipo_report='mensile'):
     """Genera i dati per i report (usata sia per HTML che Excel)"""
     # Ottieni tutti i corsi con pagamenti per il periodo
     corsi = Corso.query.all()
@@ -1209,13 +1497,27 @@ def genera_report_data(mese_filtro, anno_filtro):
     numero_pagamenti_totale = 0
     
     for corso in corsi:
-        # Pagamenti del corso per il periodo specifico
-        pagamenti = Pagamento.query.filter_by(
-            corso_id=corso.id,
-            mese=mese_filtro,
-            anno=anno_filtro,
-            pagato=True
-        ).all()
+        # Filtra pagamenti in base al tipo di report
+        if tipo_report == 'giornaliero' and data_specifica:
+            # Converti data_specifica in oggetto datetime per il confronto
+            try:
+                data_target = datetime.strptime(data_specifica, '%Y-%m-%d').date()
+                # Filtra per data specifica
+                pagamenti = Pagamento.query.filter(
+                    Pagamento.corso_id == corso.id,
+                    Pagamento.pagato == True,
+                    db.func.date(Pagamento.data_pagamento) == data_target
+                ).all()
+            except (ValueError, TypeError):
+                pagamenti = []
+        else:
+            # Pagamenti del corso per il periodo mensile
+            pagamenti = Pagamento.query.filter_by(
+                corso_id=corso.id,
+                mese=mese_filtro,
+                anno=anno_filtro,
+                pagato=True
+            ).all()
         
         if pagamenti:  # Solo corsi con pagamenti
             incasso_corso = sum(p.importo for p in pagamenti)
@@ -1223,20 +1525,27 @@ def genera_report_data(mese_filtro, anno_filtro):
             compenso_insegnante = incasso_corso * (percentuale_insegnante / 100)
             utile_corso = incasso_corso - compenso_insegnante
             
+            # Trova le date delle ricevute per questo corso nel periodo
+            date_ricevute = []
+            for pag in pagamenti:
+                if pag.data_pagamento:
+                    date_ricevute.append(pag.data_pagamento.strftime('%d/%m/%Y'))
+            
             # Crea oggetto con attributi per compatibilità template
             class ReportCorso:
-                def __init__(self, corso, insegnante, num_pag, inc_corso, perc_ins, comp_ins, ut_corso):
+                def __init__(self, corso, insegnante, date_ricevute, inc_corso, perc_ins, comp_ins, ut_corso, pagamenti_list):
                     self.corso = corso
                     self.insegnante = insegnante
-                    self.numero_pagamenti = num_pag
+                    self.date_ricevute = date_ricevute  # Lista delle date delle ricevute
                     self.incasso_corso = inc_corso
-                    self.percentuale_insegnante = perc_ins
+                    self.percentuale_insegnante = perc_ins  # Manteniamo per compatibilità con report insegnanti
                     self.compenso_insegnante = comp_ins
                     self.utile_corso = ut_corso
+                    self.pagamenti = pagamenti_list  # Lista dei pagamenti per ulteriori dettagli
             
             report_corsi.append(ReportCorso(
-                corso, corso.insegnante, len(pagamenti), 
-                incasso_corso, percentuale_insegnante, compenso_insegnante, utile_corso
+                corso, corso.insegnante, date_ricevute,
+                incasso_corso, percentuale_insegnante, compenso_insegnante, utile_corso, pagamenti
             ))
             
             incasso_totale += incasso_corso
@@ -1284,6 +1593,8 @@ def reports():
     # Parametri filtro con validazione
     mese_filtro = request.args.get('mese', date.today().month, type=int)
     anno_filtro = request.args.get('anno', date.today().year, type=int)
+    data_specifica = request.args.get('data_specifica')  # Formato: YYYY-MM-DD
+    tipo_report = request.args.get('tipo_report', 'mensile')  # mensile o giornaliero
     
     # Validazione parametri
     if mese_filtro < 1 or mese_filtro > 12:
@@ -1296,7 +1607,7 @@ def reports():
             'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre']
     
     # Usa la funzione unificata per generare i dati
-    report_corsi, report_insegnanti, riepilogo = genera_report_data(mese_filtro, anno_filtro)
+    report_corsi, report_insegnanti, riepilogo = genera_report_data(mese_filtro, anno_filtro, data_specifica, tipo_report)
     
     # Settings per la stampa
     settings = Settings.get_settings()
@@ -1307,6 +1618,8 @@ def reports():
                          riepilogo=riepilogo,
                          mese_filtro=mese_filtro,
                          anno_filtro=anno_filtro,
+                         data_specifica=data_specifica,
+                         tipo_report=tipo_report,
                          mesi=mesi,
                          settings=settings,
                          moment=datetime.now)
