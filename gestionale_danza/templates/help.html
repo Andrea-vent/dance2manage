@@ -34,6 +34,9 @@
                         <a href="#pagamenti" class="list-group-item list-group-item-action">
                             <i class="bi bi-credit-card me-2"></i>Gestione Pagamenti
                         </a>
+                        <a href="#email-ricevute" class="list-group-item list-group-item-action">
+                            <i class="bi bi-envelope-paper me-2"></i>Email Ricevute PDF
+                        </a>
                         <a href="#report" class="list-group-item list-group-item-action">
                             <i class="bi bi-graph-up me-2"></i>Report e Email
                         </a>
@@ -73,17 +76,19 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Invio Ricevute PDF via Email</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Controlli Email Intelligenti</strong></li>
                                     <li><i class="bi bi-check-circle text-success me-2"></i><strong>Autenticazione a Due Fattori (2FA)</strong></li>
                                     <li><i class="bi bi-check-circle text-success me-2"></i><strong>Recupero Password via Email</strong></li>
                                     <li><i class="bi bi-check-circle text-success me-2"></i><strong>Email Report agli Insegnanti</strong></li>
-                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Logo Aziendale Personalizzato</strong></li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
                                 <ul class="list-unstyled">
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Ricerca Live Ottimizzata</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Tabelle Ordinabili e Paginazione</strong></li>
+                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Logo Aziendale Personalizzato</strong></li>
                                     <li><i class="bi bi-check-circle text-success me-2"></i><strong>Sistema Email SMTP Integrato</strong></li>
-                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Notifiche SweetAlert Eleganti</strong></li>
-                                    <li><i class="bi bi-check-circle text-success me-2"></i><strong>Report HTML con Allievi</strong></li>
                                     <li><i class="bi bi-check-circle text-success me-2"></i><strong>UI Moderna e Responsive</strong></li>
                                 </ul>
                             </div>
@@ -366,11 +371,20 @@
 
                                 <h5 class="mt-4">🧾 Ricevute PDF con Logo</h5>
                                 <ul>
-                                    <li>Cliccare <strong>Ricevuta PDF</strong></li>
+                                    <li>Cliccare <strong>Ricevuta PDF</strong> <i class="bi bi-file-pdf"></i></li>
                                     <li>Include <strong>logo aziendale</strong> automaticamente</li>
                                     <li>Mostra Codice Fiscale cliente</li>
                                     <li>Numerazione progressiva</li>
                                     <li>Layout professionale</li>
+                                </ul>
+
+                                <h5 class="mt-4">📧 Email Ricevute (NUOVO!)</h5>
+                                <ul>
+                                    <li>Pulsante <strong>Email</strong> <i class="bi bi-envelope"></i> per invio diretto</li>
+                                    <li>Visibile solo se cliente ha email configurata</li>
+                                    <li>PDF ricevuta allegato automaticamente</li>
+                                    <li>Messaggio personalizzato professionale</li>
+                                    <li>Conferma invio con feedback immediato</li>
                                 </ul>
                             </div>
                             <div class="col-md-6">
@@ -385,6 +399,91 @@
                                 <div class="alert alert-info mt-3">
                                     <i class="bi bi-lightbulb me-2"></i>
                                     <strong>Suggerimento:</strong> Usare i filtri per trovare rapidamente pagamenti scaduti o da riscuotere.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Email Ricevute PDF -->
+            <section id="email-ricevute" class="mb-5">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h3 class="mb-0"><i class="bi bi-envelope-paper me-2"></i>Email Ricevute PDF & Ricerca Avanzata</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>📧 Invio Ricevute via Email</h5>
+                                <p><strong>Nuova funzionalità:</strong> Invia ricevute PDF direttamente via email ai clienti!</p>
+                                <ol>
+                                    <li>Andare nella sezione <strong>Pagamenti</strong></li>
+                                    <li>Per pagamenti <strong>già pagati</strong>, cercare il pulsante verde <i class="bi bi-envelope"></i></li>
+                                    <li>Il pulsante appare <strong>solo se</strong>:
+                                        <ul>
+                                            <li>Il cliente ha un indirizzo email configurato</li>
+                                            <li>L'email server è configurato nelle impostazioni</li>
+                                            <li>Il pagamento è stato marcato come "Pagato"</li>
+                                        </ul>
+                                    </li>
+                                    <li>Cliccare sul pulsante per aprire il modale di conferma</li>
+                                    <li>Confermare l'invio per spedire ricevuta PDF</li>
+                                </ol>
+
+                                <div class="alert alert-success">
+                                    <h6><i class="bi bi-magic me-2"></i>Email Professionale</h6>
+                                    <ul class="mb-0">
+                                        <li>PDF ricevuta allegato automaticamente</li>
+                                        <li>Messaggio personalizzato con dettagli pagamento</li>
+                                        <li>Logo aziendale e dati di contatto</li>
+                                        <li>Conferma di invio immediata</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>🔍 Ricerca Live Migliorata</h5>
+                                <p><strong>Ottimizzazioni implementate:</strong></p>
+                                <ul>
+                                    <li><strong>Debouncing 400ms:</strong> Riduce le query durante la digitazione</li>
+                                    <li><strong>Ricerca istantanea</strong> nelle tabelle Clienti e Pagamenti</li>
+                                    <li><strong>Colonne ordinabili</strong> con indicatori visivi</li>
+                                    <li><strong>Paginazione dinamica</strong> con elementi configurabili</li>
+                                </ul>
+
+                                <h5 class="mt-4">🎛️ Controlli Intelligenti</h5>
+                                <p>Il sistema ora nasconde automaticamente:</p>
+                                <ul>
+                                    <li><strong>Pulsanti email</strong> se server non configurato</li>
+                                    <li><strong>Password recovery</strong> se email non disponibile</li>
+                                    <li><strong>Funzioni 2FA</strong> senza configurazione SMTP</li>
+                                </ul>
+
+                                <div class="alert alert-info">
+                                    <h6><i class="bi bi-shield-check me-2"></i>Sicurezza & UX</h6>
+                                    <p class="mb-0">Gli utenti vedono solo le opzioni funzionanti, evitando confusione e tentativi di invio falliti.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>🚀 Come Utilizzare al Meglio</h5>
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <h6>1. Configurazione Email</h6>
+                                        <p>Prima di tutto configurare SMTP in <strong>Impostazioni → Email SMTP</strong></p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>2. Email Clienti</h6>
+                                        <p>Assicurarsi che i clienti abbiano email configurate nei loro profili</p>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <h6>3. Test Funzionalità</h6>
+                                        <p>Utilizzare "Test Email" in impostazioni per verificare il setup</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -699,6 +798,32 @@
                                 <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                     <div class="accordion-body">
                                         I report email includono automaticamente: logo aziendale, dati completi per corso, lista allievi, status pagamenti. Per personalizzazioni avanzate è necessario modificare i template HTML in <code>templates/emails/</code>.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7">
+                                        Non vedo il pulsante per inviare ricevute via email, perché?
+                                    </button>
+                                </h2>
+                                <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        Il pulsante email <i class="bi bi-envelope"></i> appare solo se: 1) Il cliente ha un indirizzo email configurato, 2) L'email server è configurato nelle impostazioni, 3) Il pagamento è marcato come "Pagato". Verificare questi requisiti.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8">
+                                        La ricerca nelle tabelle è lenta, come migliorarla?
+                                    </button>
+                                </h2>
+                                <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        La ricerca live è ottimizzata con debouncing di 400ms. Se risulta ancora lenta: 1) Utilizzare filtri specifici (mese/anno), 2) Ridurre elementi per pagina, 3) Utilizzare termini di ricerca più specifici.
                                     </div>
                                 </div>
                             </div>
