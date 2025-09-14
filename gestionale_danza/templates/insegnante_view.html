@@ -133,11 +133,11 @@
                                 <td><strong>{{ corso.nome }}</strong></td>
                                 <td>{{ corso.giorno }}</td>
                                 <td>{{ corso.orario.strftime('%H:%M') }}</td>
-                                <td>€ {{ "%.2f"|format(corso.costo_mensile) }}</td>
-                                <td>{{ corso.pagamenti|length }} iscritti</td>
+                                <td>{{ corso.costo_mensile|euro }}</td>
+                                <td>{{ corso.numero_iscritti }} iscritti</td>
                                 <td>
-                                    {% set guadagno = (corso.costo_mensile * corso.pagamenti|length * insegnante.percentuale_guadagno / 100) %}
-                                    <strong>€ {{ "%.2f"|format(guadagno) }}</strong>
+                                    {% set guadagno = (corso.costo_mensile * corso.numero_iscritti * insegnante.percentuale_guadagno / 100) %}
+                                    <strong>{{ guadagno|euro }}</strong>
                                 </td>
                                 <td>
                                     <a href="{{ url_for('dettagli_corso', id=corso.id) }}" 
@@ -164,11 +164,7 @@
                             <div class="text-center">
                                 <h6 class="text-muted mb-1">Totale Studenti</h6>
                                 <h4 class="text-success">
-                                    {% set totale_studenti = 0 %}
-                                    {% for corso in insegnante.corsi %}
-                                        {% set totale_studenti = totale_studenti + corso.pagamenti|length %}
-                                    {% endfor %}
-                                    {{ totale_studenti }}
+                                    {{ insegnante.corsi|map(attribute='numero_iscritti')|sum }}
                                 </h4>
                             </div>
                         </div>
@@ -176,11 +172,11 @@
                             <div class="text-center">
                                 <h6 class="text-muted mb-1">Guadagno Mensile Stimato</h6>
                                 <h4 class="text-warning">
-                                    {% set guadagno_totale = 0 %}
+                                    {% set guadagni = [] %}
                                     {% for corso in insegnante.corsi %}
-                                        {% set guadagno_totale = guadagno_totale + (corso.costo_mensile * corso.pagamenti|length * insegnante.percentuale_guadagno / 100) %}
+                                        {% set _ = guadagni.append(corso.costo_mensile * corso.numero_iscritti * insegnante.percentuale_guadagno / 100) %}
                                     {% endfor %}
-                                    €{{ "%.2f"|format(guadagno_totale) }}
+                                    {{ guadagni|sum|euro }}
                                 </h4>
                             </div>
                         </div>

@@ -46,7 +46,7 @@
                 <div class="row mb-3">
                     <div class="col-sm-4"><strong>Costo Mensile:</strong></div>
                     <div class="col-sm-8">
-                        <span class="badge bg-success fs-6">€ {{ "%.2f"|format(corso.costo_mensile) }}</span>
+                        <span class="badge bg-success fs-6">{{ corso.costo_mensile|euro }}</span>
                     </div>
                 </div>
                 <div class="row mb-3">
@@ -93,28 +93,28 @@
                 <div class="row mb-3">
                     <div class="col-sm-4"><strong>Studenti Iscritti:</strong></div>
                     <div class="col-sm-8">
-                        <span class="badge bg-primary fs-6">{{ corso.pagamenti|length }}</span>
+                        <span class="badge bg-primary fs-6">{{ corso.numero_iscritti }}</span>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4"><strong>Incasso Mensile:</strong></div>
                     <div class="col-sm-8">
-                        {% set incasso_mensile = corso.costo_mensile * corso.pagamenti|length %}
-                        <span class="badge bg-success fs-6">€ {{ "%.2f"|format(incasso_mensile) }}</span>
+                        {% set incasso_mensile = corso.costo_mensile * corso.numero_iscritti %}
+                        <span class="badge bg-success fs-6">{{ incasso_mensile|euro }}</span>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4"><strong>Compenso Insegnante:</strong></div>
                     <div class="col-sm-8">
                         {% set compenso = incasso_mensile * corso.insegnante.percentuale_guadagno / 100 %}
-                        <span class="badge bg-warning fs-6">€ {{ "%.2f"|format(compenso) }}</span>
+                        <span class="badge bg-warning fs-6">{{ compenso|euro }}</span>
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-sm-4"><strong>Utile Scuola:</strong></div>
                     <div class="col-sm-8">
                         {% set utile = incasso_mensile - compenso %}
-                        <span class="badge bg-info fs-6">€ {{ "%.2f"|format(utile) }}</span>
+                        <span class="badge bg-info fs-6">{{ utile|euro }}</span>
                     </div>
                 </div>
             </div>
@@ -206,7 +206,7 @@
                         <div class="col-md-3">
                             <div class="text-center">
                                 <h6 class="text-muted mb-1">Totale Studenti</h6>
-                                <h4 class="text-primary">{{ corso.pagamenti|length }}</h4>
+                                <h4 class="text-primary">{{ corso.numero_iscritti }}</h4>
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -223,7 +223,7 @@
                                 <h6 class="text-muted mb-1">Incasso Effettivo</h6>
                                 <h4 class="text-warning">
                                     {% set incasso_effettivo = (corso.pagamenti|selectattr('pagato')|list|length) * corso.costo_mensile %}
-                                    €{{ "%.2f"|format(incasso_effettivo) }}
+                                    {{ incasso_effettivo|euro }}
                                 </h4>
                             </div>
                         </div>
@@ -231,8 +231,8 @@
                             <div class="text-center">
                                 <h6 class="text-muted mb-1">Tasso Pagamento</h6>
                                 <h4 class="text-info">
-                                    {% if corso.pagamenti|length > 0 %}
-                                        {% set tasso = (pagamenti_ricevuti / corso.pagamenti|length * 100) %}
+                                    {% if corso.numero_iscritti > 0 %}
+                                        {% set tasso = (pagamenti_ricevuti / corso.numero_iscritti * 100) %}
                                         {{ "%.0f"|format(tasso) }}%
                                     {% else %}
                                         0%
