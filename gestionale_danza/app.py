@@ -103,6 +103,30 @@ def inject_settings():
     except Exception:
         return dict(global_settings=None)
 
+# Filtro Jinja2 per formattazione valuta italiana
+@app.template_filter('currency')
+def currency_filter(value):
+    """Formatta un numero come valuta italiana: 1.000,00"""
+    if value is None:
+        return "0,00"
+    try:
+        # Converti in float se necessario
+        if isinstance(value, str):
+            value = float(value.replace(',', '.').replace('.', ''))
+        
+        # Formatta con separatore migliaia e virgola decimale
+        formatted = "{:,.2f}".format(float(value))
+        # Sostituisci . con , per decimali e , con . per migliaia (formato italiano)
+        formatted = formatted.replace(',', 'TEMP').replace('.', ',').replace('TEMP', '.')
+        return formatted
+    except (ValueError, TypeError):
+        return "0,00"
+
+@app.template_filter('euro')
+def euro_filter(value):
+    """Formatta un numero come euro: €1.000,00"""
+    return f"€{currency_filter(value)}"
+
 # Crea cartelle necessarie
 pdf_folder = os.path.join(base_path, 'pdf_ricevute')
 os.makedirs(pdf_folder, exist_ok=True)
@@ -325,6 +349,12 @@ def dashboard():
 def clienti():
     search = request.args.get('search', '')
     stato = request.args.get('stato', 'tutti')
+    page = request.args.get('page', 1, type=int)
+    per_page = request.args.get('per_page', 25, type=int)
+    
+    # Validazione per_page
+    if per_page not in [10, 25, 50]:
+        per_page = 25
     
     query = Cliente.query
     
@@ -340,8 +370,21 @@ def clienti():
     elif stato == 'inattivi':
         query = query.filter_by(attivo=False)
     
-    clienti = query.all()
-    return render_template('clienti.html', clienti=clienti, search=search, stato=stato)
+    # Ordina per cognome, nome
+    query = query.order_by(Cliente.cognome, Cliente.nome)
+    
+    # Paginazione
+    clienti = query.paginate(
+        page=page,
+        per_page=per_page,
+        error_out=False
+    )
+    
+    return render_template('clienti.html', 
+                         clienti=clienti, 
+                         search=search, 
+                         stato=stato,
+                         per_page=per_page)
 
 @app.route('/clienti/nuovo', methods=['GET', 'POST'])
 @login_required
@@ -665,6 +708,74 @@ def genera_ricevuta(id):
     except Exception as e:
         flash(f'Errore nella generazione della ricevuta: {str(e)}', 'error')
         return redirect(url_for('pagamenti'))
+
+@app.route('/genera_ricevute_bulk', methods=['POST'])
+@login_required
+def genera_ricevute_bulk():
+    try:
+        # Ottieni parametri dal form
+        clienti_ids = request.form.getlist('clienti_ids')
+        mese = int(request.form['mese'])
+        anno = int(request.form['anno'])
+        
+        if not clienti_ids:
+            flash('Nessun cliente selezionato', 'error')
+            return redirect(url_for('clienti'))
+        
+        ricevute_create = 0
+        errori = []
+        
+        for cliente_id in clienti_ids:
+            cliente = Cliente.query.get_or_404(cliente_id)
+            
+            # Per ogni corso del cliente
+            for corso in cliente.corsi:
+                # Verifica se esiste già un pagamento per questo mese/anno/cliente/corso
+                pagamento_esistente = Pagamento.query.filter_by(
+                    cliente_id=cliente_id,
+                    corso_id=corso.id,
+                    mese=mese,
+                    anno=anno
+                ).first()
+                
+                if pagamento_esistente:
+                    errori.append(f"{cliente.nome_completo} - {corso.nome}: pagamento già esistente")
+                    continue
+                
+                # Crea nuovo pagamento
+                pagamento = Pagamento(
+                    mese=mese,
+                    anno=anno,
+                    importo=corso.costo_mensile,
+                    cliente_id=cliente_id,
+                    corso_id=corso.id,
+                    pagato=True,  # Lo marco già come pagato
+                    data_pagamento=datetime.now(),
+                    metodo_pagamento='Contanti',
+                    note=f'Generato automaticamente il {datetime.now().strftime("%d/%m/%Y")}'
+                )
+                
+                db.session.add(pagamento)
+                ricevute_create += 1
+        
+        db.session.commit()
+        
+        # Messaggi di risultato
+        if ricevute_create > 0:
+            flash(f'Create {ricevute_create} ricevute con successo!', 'success')
+        
+        if errori:
+            for errore in errori[:5]:  # Mostra solo i primi 5 errori
+                flash(errore, 'warning')
+            if len(errori) > 5:
+                flash(f'... e altri {len(errori) - 5} errori', 'warning')
+        
+        return redirect(url_for('pagamenti'))
+    
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Errore nella generazione delle ricevute: {str(e)}', 'error')
+        return redirect(url_for('clienti'))
 
 # BACKUP ROUTE
 @app.route('/backup')
