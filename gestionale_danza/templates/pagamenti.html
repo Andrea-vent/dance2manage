@@ -604,10 +604,8 @@ function clearDataSpecifica() {
 
 // === FUNZIONI PER INVIO EMAIL RICEVUTE ===
 
-let currentPaymentId = null;
-
 function inviaRicevutaEmail(pagamentoId, clienteEmail) {
-    currentPaymentId = pagamentoId;
+    // Usa il parametro direttamente, non una variabile globale
     
     // Trova informazioni sul pagamento dalla tabella
     const row = document.querySelector(`button[onclick*="${pagamentoId}"]`).closest('tr');
@@ -623,7 +621,11 @@ function inviaRicevutaEmail(pagamentoId, clienteEmail) {
     // Reset stati
     document.getElementById('emailProgress').classList.add('d-none');
     document.getElementById('emailResult').classList.add('d-none');
-    document.getElementById('confirmEmailSend').disabled = false;
+    const confirmButton = document.getElementById('confirmEmailSend');
+    confirmButton.disabled = false;
+    
+    // IMPORTANTE: Imposta l'ID del pagamento sul bottone per evitare race conditions
+    confirmButton.setAttribute('data-pagamento-id', pagamentoId);
     
     // Mostra il modale
     new bootstrap.Modal(document.getElementById('emailReceiptModal')).show();
@@ -631,7 +633,8 @@ function inviaRicevutaEmail(pagamentoId, clienteEmail) {
 
 // Event listener per conferma invio email
 document.getElementById('confirmEmailSend').addEventListener('click', function() {
-    if (!currentPaymentId) return;
+    const pagamentoId = this.getAttribute('data-pagamento-id');
+    if (!pagamentoId) return;
     
     const button = this;
     const progress = document.getElementById('emailProgress');
@@ -643,7 +646,7 @@ document.getElementById('confirmEmailSend').addEventListener('click', function()
     result.classList.add('d-none');
     
     // Invia richiesta AJAX
-    fetch(`/pagamenti/${currentPaymentId}/invia-email`, {
+    fetch(`/pagamenti/${pagamentoId}/invia-email`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',

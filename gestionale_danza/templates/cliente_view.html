@@ -40,15 +40,57 @@
                     <div class="col-sm-8">
                         {% if cliente.data_nascita %}
                             {{ cliente.data_nascita.strftime('%d/%m/%Y') }}
+                            {% if cliente.eta is not none %}
+                                <br><small class="text-muted">
+                                    Età: {{ cliente.eta }} anni
+                                    {% if cliente.is_minorenne %}
+                                        <span class="badge bg-warning ms-1">Minorenne</span>
+                                    {% else %}
+                                        <span class="badge bg-success ms-1">Maggiorenne</span>
+                                    {% endif %}
+                                </small>
+                            {% endif %}
                         {% else %}
                             <span class="text-muted">Non specificata</span>
                         {% endif %}
                     </div>
                 </div>
                 <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Sesso:</strong></div>
+                    <div class="col-sm-8">
+                        {% if cliente.sesso %}
+                            {% if cliente.sesso == 'M' %}
+                                <i class="bi bi-person me-1"></i>Maschio
+                            {% else %}
+                                <i class="bi bi-person-dress me-1"></i>Femmina
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Non specificato</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if cliente.comune_nascita or cliente.provincia_nascita %}
+                <div class="row mb-3">
+                    <div class="col-sm-4"><strong>Luogo di Nascita:</strong></div>
+                    <div class="col-sm-8">
+                        {% if cliente.comune_nascita %}{{ cliente.comune_nascita }}{% endif %}
+                        {% if cliente.provincia_nascita %} ({{ cliente.provincia_nascita }}){% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
                     <div class="col-sm-4"><strong>Codice Fiscale:</strong></div>
                     <div class="col-sm-8">
-                        {{ cliente.codice_fiscale or 'Non specificato' }}
+                        {% if cliente.codice_fiscale %}
+                            {{ cliente.codice_fiscale }}
+                            {% if cliente.cf_calcolato_automaticamente %}
+                                <span class="badge bg-success ms-1" title="Calcolato automaticamente">
+                                    <i class="bi bi-calculator"></i> Auto
+                                </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Non specificato</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="row mb-3">
@@ -118,6 +160,76 @@
         </div>
     </div>
 </div>
+
+<!-- Riferimenti Genitori (solo per minorenni) -->
+{% if cliente.is_minorenne %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning bg-opacity-10">
+                <h5 class="mb-0 text-warning">
+                    <i class="bi bi-people me-2"></i>Riferimenti Genitori
+                    <small class="text-muted">(minorenne)</small>
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3"><i class="bi bi-person-heart me-2"></i>Madre</h6>
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><strong>Nome:</strong></div>
+                            <div class="col-sm-8">
+                                {{ cliente.nome_cognome_madre or '<span class="text-muted">Non specificato</span>'|safe }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4"><strong>Telefono:</strong></div>
+                            <div class="col-sm-8">
+                                {% if cliente.telefono_madre %}
+                                    <a href="tel:{{ cliente.telefono_madre }}" class="text-decoration-none">
+                                        <i class="bi bi-telephone me-1"></i>{{ cliente.telefono_madre }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Non specificato</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-3"><i class="bi bi-person-gear me-2"></i>Padre</h6>
+                        <div class="row mb-2">
+                            <div class="col-sm-4"><strong>Nome:</strong></div>
+                            <div class="col-sm-8">
+                                {{ cliente.nome_cognome_padre or '<span class="text-muted">Non specificato</span>'|safe }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4"><strong>Telefono:</strong></div>
+                            <div class="col-sm-8">
+                                {% if cliente.telefono_padre %}
+                                    <a href="tel:{{ cliente.telefono_padre }}" class="text-decoration-none">
+                                        <i class="bi bi-telephone me-1"></i>{{ cliente.telefono_padre }}
+                                    </a>
+                                {% else %}
+                                    <span class="text-muted">Non specificato</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if not cliente.nome_cognome_madre and not cliente.nome_cognome_padre %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Nessun riferimento genitore inserito. I contatti dei genitori sono utili per comunicazioni importanti.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 
 <!-- Storico Pagamenti -->
 <div class="row mt-4">

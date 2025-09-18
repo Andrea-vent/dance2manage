@@ -27,13 +27,65 @@
                         </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="codice_fiscale" class="form-label">Codice Fiscale</label>
-                        <input type="text" class="form-control" id="codice_fiscale" name="codice_fiscale" 
-                               value="{{ cliente.codice_fiscale if cliente else '' }}" 
-                               maxlength="16" placeholder="RSSMRA80A01H501X" 
-                               pattern="[A-Za-z0-9]{16}" style="text-transform: uppercase;">
-                        <div class="form-text">16 caratteri alfanumerici (opzionale)</div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="data_nascita" class="form-label">Data di Nascita</label>
+                            <input type="date" class="form-control" id="data_nascita" name="data_nascita" 
+                                   value="{{ cliente.data_nascita.strftime('%Y-%m-%d') if cliente and cliente.data_nascita else '' }}">
+                            <div class="form-text" id="eta-info"></div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="sesso" class="form-label">Sesso</label>
+                            <select class="form-control" id="sesso" name="sesso">
+                                <option value="">Seleziona...</option>
+                                <option value="M" {% if cliente and cliente.sesso == 'M' %}selected{% endif %}>Maschio</option>
+                                <option value="F" {% if cliente and cliente.sesso == 'F' %}selected{% endif %}>Femmina</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="comune_nascita" class="form-label">Comune di Nascita</label>
+                            <input type="text" class="form-control" id="comune_nascita" name="comune_nascita" 
+                                   value="{{ cliente.comune_nascita if cliente else '' }}" placeholder="Roma">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="provincia_nascita" class="form-label">Provincia Nascita</label>
+                            <input type="text" class="form-control" id="provincia_nascita" name="provincia_nascita" 
+                                   value="{{ cliente.provincia_nascita if cliente else '' }}" placeholder="RM" 
+                                   maxlength="2" style="text-transform: uppercase;">
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="codice_fiscale" class="form-label">
+                                Codice Fiscale
+                                <button type="button" class="btn btn-sm btn-outline-primary ms-2" id="calcola-cf">
+                                    <i class="bi bi-calculator"></i> Calcola Automaticamente
+                                </button>
+                            </label>
+                            <input type="text" class="form-control" id="codice_fiscale" name="codice_fiscale" 
+                                   value="{{ cliente.codice_fiscale if cliente else '' }}" 
+                                   maxlength="16" placeholder="RSSMRA80A01H501X" 
+                                   pattern="[A-Za-z0-9]{16}" style="text-transform: uppercase;">
+                            <div class="form-text">
+                                16 caratteri alfanumerici 
+                                {% if cliente and cliente.cf_calcolato_automaticamente %}
+                                    <span class="badge bg-success ms-1">Calcolato automaticamente</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="cf_calcolato_automaticamente" name="cf_calcolato_automaticamente" 
+                                       {% if cliente and cliente.cf_calcolato_automaticamente %}checked{% endif %} disabled>
+                                <label class="form-check-label" for="cf_calcolato_automaticamente">
+                                    CF calcolato automaticamente
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="row">
@@ -96,6 +148,49 @@
                         </div>
                     </div>
 
+                    <!-- Sezione Riferimenti Genitori (solo per minorenni) -->
+                    <div id="genitori-section" style="display: none;">
+                        <h5 class="mt-4 mb-3 text-warning">
+                            <i class="bi bi-people me-2"></i>Riferimenti Genitori
+                            <small class="text-muted">(richiesto per minorenni)</small>
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nome_cognome_madre" class="form-label">Nome e Cognome Madre</label>
+                                <input type="text" class="form-control" id="nome_cognome_madre" name="nome_cognome_madre" 
+                                       value="{{ cliente.nome_cognome_madre if cliente else '' }}" 
+                                       placeholder="Maria Rossi">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono_madre" class="form-label">Telefono Madre</label>
+                                <input type="tel" class="form-control" id="telefono_madre" name="telefono_madre" 
+                                       value="{{ cliente.telefono_madre if cliente else '' }}"
+                                       placeholder="333 123 4567">
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="nome_cognome_padre" class="form-label">Nome e Cognome Padre</label>
+                                <input type="text" class="form-control" id="nome_cognome_padre" name="nome_cognome_padre" 
+                                       value="{{ cliente.nome_cognome_padre if cliente else '' }}" 
+                                       placeholder="Marco Rossi">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="telefono_padre" class="form-label">Telefono Padre</label>
+                                <input type="tel" class="form-control" id="telefono_padre" name="telefono_padre" 
+                                       value="{{ cliente.telefono_padre if cliente else '' }}"
+                                       placeholder="333 765 4321">
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            I riferimenti dei genitori sono utili per contatti di emergenza e comunicazioni importanti.
+                        </div>
+                    </div>
+
                     {% if corsi %}
                     <div class="mb-3">
                         <label class="form-label">Corsi frequentati</label>
@@ -131,4 +226,128 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dataNascitaInput = document.getElementById('data_nascita');
+    const etaInfo = document.getElementById('eta-info');
+    const genitoriSection = document.getElementById('genitori-section');
+    
+    function calcolaEta(dataNascita) {
+        if (!dataNascita) return null;
+        
+        const oggi = new Date();
+        const nascita = new Date(dataNascita);
+        let eta = oggi.getFullYear() - nascita.getFullYear();
+        const mese = oggi.getMonth() - nascita.getMonth();
+        
+        if (mese < 0 || (mese === 0 && oggi.getDate() < nascita.getDate())) {
+            eta--;
+        }
+        
+        return eta;
+    }
+    
+    function aggiornaEtaEGenitori() {
+        const dataNascita = dataNascitaInput.value;
+        
+        if (dataNascita) {
+            const eta = calcolaEta(dataNascita);
+            
+            if (eta !== null) {
+                etaInfo.textContent = `Età: ${eta} anni`;
+                
+                if (eta < 18) {
+                    etaInfo.innerHTML += ' <span class="badge bg-warning">Minorenne</span>';
+                    genitoriSection.style.display = 'block';
+                } else {
+                    etaInfo.innerHTML += ' <span class="badge bg-success">Maggiorenne</span>';
+                    genitoriSection.style.display = 'none';
+                }
+            }
+        } else {
+            etaInfo.textContent = '';
+            genitoriSection.style.display = 'none';
+        }
+    }
+    
+    // Event listener per il cambio data
+    dataNascitaInput.addEventListener('change', aggiornaEtaEGenitori);
+    
+    // Calcola subito se c'è già una data (edit mode)
+    aggiornaEtaEGenitori();
+    
+    // Se stiamo editando un cliente minorenne, mostra subito la sezione
+    {% if cliente and cliente.is_minorenne %}
+    genitoriSection.style.display = 'block';
+    {% endif %}
+    
+    // Calcolo automatico codice fiscale
+    const calcolaCfButton = document.getElementById('calcola-cf');
+    const codiceFiscaleInput = document.getElementById('codice_fiscale');
+    const cfCalcolatoCheckbox = document.getElementById('cf_calcolato_automaticamente');
+    
+    calcolaCfButton.addEventListener('click', function() {
+        // Raccogli i dati necessari
+        const nome = document.getElementById('nome').value.trim();
+        const cognome = document.getElementById('cognome').value.trim();
+        const dataNascita = document.getElementById('data_nascita').value;
+        const sesso = document.getElementById('sesso').value;
+        const comuneNascita = document.getElementById('comune_nascita').value.trim();
+        const provinciaNascita = document.getElementById('provincia_nascita').value.trim();
+        
+        // Verifica che tutti i campi necessari siano compilati
+        if (!nome || !cognome || !dataNascita || !sesso || !comuneNascita || !provinciaNascita) {
+            alert('Per calcolare il codice fiscale è necessario compilare:\n- Nome\n- Cognome\n- Data di nascita\n- Sesso\n- Comune di nascita\n- Provincia di nascita');
+            return;
+        }
+        
+        // Invia richiesta AJAX per calcolare il CF
+        fetch('/calcola_codice_fiscale', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                nome: nome,
+                cognome: cognome,
+                data_nascita: dataNascita,
+                sesso: sesso,
+                comune_nascita: comuneNascita,
+                provincia_nascita: provinciaNascita
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                codiceFiscaleInput.value = data.codice_fiscale;
+                cfCalcolatoCheckbox.checked = true;
+                
+                // Mostra messaggio di successo
+                const successDiv = document.createElement('div');
+                successDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+                successDiv.innerHTML = `
+                    <i class="bi bi-check-circle me-2"></i>
+                    Codice fiscale calcolato: <strong>${data.codice_fiscale}</strong>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+                codiceFiscaleInput.parentNode.appendChild(successDiv);
+                
+                // Rimuovi il messaggio dopo 5 secondi
+                setTimeout(() => {
+                    if (successDiv.parentNode) {
+                        successDiv.remove();
+                    }
+                }, 5000);
+            } else {
+                alert('Errore nel calcolo del codice fiscale: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Errore:', error);
+            alert('Errore nella comunicazione con il server');
+        });
+    });
+});
+</script>
 {% endblock %}

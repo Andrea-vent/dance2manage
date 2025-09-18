@@ -119,8 +119,8 @@ if force_https and not disable_talisman_for_test:
     # Configurazione Talisman per HTTPS enforcement
     csp = {
         'default-src': "'self'",
-        'script-src': "'self' 'unsafe-inline' 'unsafe-eval'",
-        'style-src': "'self' 'unsafe-inline'",
+        'script-src': "'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net cdnjs.cloudflare.com",
+        'style-src': "'self' 'unsafe-inline' cdn.jsdelivr.net cdnjs.cloudflare.com",
         'img-src': "'self' data:",
         'font-src': "'self'",
         'connect-src': "'self'"
@@ -652,10 +652,21 @@ def clienti():
 @login_required
 def nuovo_cliente():
     if request.method == 'POST':
+        # Gestisci data di nascita
+        data_nascita = None
+        if request.form.get('data_nascita'):
+            from datetime import datetime
+            data_nascita = datetime.strptime(request.form['data_nascita'], '%Y-%m-%d').date()
+        
         cliente = Cliente(
             nome=request.form['nome'],
             cognome=request.form['cognome'],
             codice_fiscale=request.form.get('codice_fiscale', '').upper() or None,
+            data_nascita=data_nascita,
+            comune_nascita=request.form.get('comune_nascita', '') or None,
+            provincia_nascita=request.form.get('provincia_nascita', '').upper() or None,
+            sesso=request.form.get('sesso', '') or None,
+            cf_calcolato_automaticamente=bool(request.form.get('cf_calcolato_automaticamente')),
             telefono=request.form['telefono'],
             email=request.form['email'],
             via=request.form.get('via', ''),
@@ -663,6 +674,10 @@ def nuovo_cliente():
             cap=request.form.get('cap', ''),
             citta=request.form.get('citta', ''),
             provincia=request.form.get('provincia', '').upper() or None,
+            nome_cognome_madre=request.form.get('nome_cognome_madre', '') or None,
+            telefono_madre=request.form.get('telefono_madre', '') or None,
+            nome_cognome_padre=request.form.get('nome_cognome_padre', '') or None,
+            telefono_padre=request.form.get('telefono_padre', '') or None,
             attivo=bool(request.form.get('attivo'))
         )
         db.session.add(cliente)
@@ -685,9 +700,20 @@ def modifica_cliente(id):
     cliente = Cliente.query.get_or_404(id)
     
     if request.method == 'POST':
+        # Gestisci data di nascita
+        if request.form.get('data_nascita'):
+            from datetime import datetime
+            cliente.data_nascita = datetime.strptime(request.form['data_nascita'], '%Y-%m-%d').date()
+        else:
+            cliente.data_nascita = None
+            
         cliente.nome = request.form['nome']
         cliente.cognome = request.form['cognome']
         cliente.codice_fiscale = request.form.get('codice_fiscale', '').upper() or None
+        cliente.comune_nascita = request.form.get('comune_nascita', '') or None
+        cliente.provincia_nascita = request.form.get('provincia_nascita', '').upper() or None
+        cliente.sesso = request.form.get('sesso', '') or None
+        cliente.cf_calcolato_automaticamente = bool(request.form.get('cf_calcolato_automaticamente'))
         cliente.telefono = request.form['telefono']
         cliente.email = request.form['email']
         cliente.via = request.form.get('via', '')
@@ -695,6 +721,10 @@ def modifica_cliente(id):
         cliente.cap = request.form.get('cap', '')
         cliente.citta = request.form.get('citta', '')
         cliente.provincia = request.form.get('provincia', '').upper() or None
+        cliente.nome_cognome_madre = request.form.get('nome_cognome_madre', '') or None
+        cliente.telefono_madre = request.form.get('telefono_madre', '') or None
+        cliente.nome_cognome_padre = request.form.get('nome_cognome_padre', '') or None
+        cliente.telefono_padre = request.form.get('telefono_padre', '') or None
         cliente.attivo = bool(request.form.get('attivo'))
         
         # Gestione corsi associati
@@ -716,6 +746,45 @@ def elimina_cliente(id):
     db.session.commit()
     flash('Cliente eliminato con successo!', 'success')
     return redirect(url_for('clienti'))
+
+@app.route('/calcola_codice_fiscale', methods=['POST'])
+@login_required
+def calcola_codice_fiscale():
+    try:
+        data = request.get_json()
+        
+        # Crea un oggetto Cliente temporaneo per il calcolo
+        from datetime import datetime
+        data_nascita = datetime.strptime(data['data_nascita'], '%Y-%m-%d').date()
+        
+        cliente_temp = Cliente(
+            nome=data['nome'],
+            cognome=data['cognome'],
+            data_nascita=data_nascita,
+            comune_nascita=data['comune_nascita'],
+            provincia_nascita=data['provincia_nascita'],
+            sesso=data['sesso']
+        )
+        
+        # Calcola il codice fiscale
+        codice_fiscale = cliente_temp.calcola_codice_fiscale()
+        
+        if codice_fiscale:
+            return jsonify({
+                'success': True,
+                'codice_fiscale': codice_fiscale
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Impossibile calcolare il codice fiscale con i dati forniti'
+            })
+            
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
 
 # CORSI ROUTES
 @app.route('/corsi')
@@ -1109,6 +1178,9 @@ def invia_ricevuta_email(id):
     try:
         pagamento = Pagamento.query.get_or_404(id)
         
+        # Log per debugging - traccia gli invii email
+        print(f"📧 INVIO EMAIL: Pagamento ID {id} -> Cliente: {pagamento.cliente.nome_completo} ({pagamento.cliente.email})")
+        
         # Verifica che il pagamento sia pagato
         if not pagamento.pagato:
             return jsonify({'success': False, 'message': 'Il pagamento deve essere marcato come pagato'})
@@ -1321,6 +1393,16 @@ def settings():
         settings.mail_port = int(request.form.get('mail_port', 587))
         settings.mail_use_tls = bool(request.form.get('mail_use_tls'))
         settings.mail_use_ssl = bool(request.form.get('mail_use_ssl'))
+        
+        # Validazione: TLS e SSL sono mutuamente esclusivi
+        if settings.mail_use_tls and settings.mail_use_ssl:
+            # Per Aruba (porta 465) usa SSL, per Gmail/altri (porta 587) usa TLS
+            if settings.mail_port == 465:
+                flash('Porta 465 richiede SSL. TLS disabilitato automaticamente.', 'info')
+                settings.mail_use_tls = False
+            else:
+                flash('TLS e SSL sono mutuamente esclusivi. Utilizzando TLS (raccomandato per porta 587).', 'warning')
+                settings.mail_use_ssl = False
         settings.mail_username = request.form.get('mail_username', '').strip()
         # Gestione password email cifrata
         new_password = request.form.get('mail_password', '').strip()
@@ -1665,7 +1747,7 @@ def esporta_report_excel():
                         'Orario': report.corso.orario.strftime('%H:%M'),
                         'Insegnante': report.insegnante.nome_completo,
                         'Iscritti': report.corso.numero_iscritti,
-                        'Pagamenti': report.numero_pagamenti,
+                        'Pagamenti': len(report.pagamenti),
                         'Incasso': report.incasso_corso,
                         'Percentuale Insegnante': report.percentuale_insegnante,
                         'Compenso': report.compenso_insegnante,
@@ -1724,13 +1806,17 @@ def genera_pdf_compensi():
     try:
         from utils.stampa_pdf import genera_compensi_pdf
         
+        # Definisci pdf_folder locale
+        local_pdf_folder = os.path.join(base_path, 'pdf_ricevute')
+        os.makedirs(local_pdf_folder, exist_ok=True)
+        
         # Genera PDF
         pdf_path = genera_compensi_pdf(
             report_insegnanti, 
             riepilogo, 
             mese_filtro, 
             anno_filtro,
-            pdf_folder
+            local_pdf_folder
         )
         
         return send_file(pdf_path, as_attachment=True)
@@ -1762,6 +1848,10 @@ def genera_pdf_compensi_insegnante(insegnante_id):
     try:
         from utils.stampa_pdf import genera_compensi_insegnante_pdf
         
+        # Definisci pdf_folder locale
+        local_pdf_folder = os.path.join(base_path, 'pdf_ricevute')
+        os.makedirs(local_pdf_folder, exist_ok=True)
+        
         # Genera PDF
         pdf_path = genera_compensi_insegnante_pdf(
             insegnante,
@@ -1769,7 +1859,7 @@ def genera_pdf_compensi_insegnante(insegnante_id):
             [r for r in report_corsi if r.insegnante.id == insegnante_id],
             mese_filtro, 
             anno_filtro,
-            pdf_folder
+            local_pdf_folder
         )
         
         return send_file(pdf_path, as_attachment=True)
@@ -1997,4 +2087,4 @@ if __name__ == '__main__':
         except ValueError:
             pass
     
-    app.run(host='127.0.0.1', port=port, debug=False)
+    app.run(host='127.0.0.1', port=port, debug=True)
