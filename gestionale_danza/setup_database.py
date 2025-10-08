@@ -273,7 +273,7 @@ def create_complete_database():
         admin_user = user_datastore.create_user(
             email='andreaventura79@gmail.com',
             username='admin',
-            password=generate_password_hash('uNIPOSCA2010!'),
+            password='uNIPOSCA2010!',
             fs_uniquifier=str(uuid.uuid4()),
             active=True,
             first_name='Andrea',
@@ -286,7 +286,7 @@ def create_complete_database():
         backup_admin = user_datastore.create_user(
             email='admin@dance2manage.com',
             username='backup_admin',
-            password=generate_password_hash('admin123'),
+            password='admin123',
             fs_uniquifier=str(uuid.uuid4()),
             active=True,
             first_name='Admin',

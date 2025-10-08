@@ -829,7 +829,7 @@ def genera_compensi_insegnante_pdf(insegnante, report_insegnante, corsi_insegnan
                     corso_report.corso.giorno,
                     corso_report.corso.orario.strftime('%H:%M'),
                     str(corso_report.corso.numero_iscritti),
-                    str(corso_report.numero_pagamenti),
+                    str(len(corso_report.pagamenti)),
                     format_currency_it(corso_report.incasso_corso),
                     f"{corso_report.percentuale_insegnante:.0f}%",
                     format_currency_it(corso_report.compenso_insegnante)

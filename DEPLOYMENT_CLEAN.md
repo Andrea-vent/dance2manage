@@ -9,6 +9,7 @@ Questa guida usa il nuovo script `setup_database.py` che crea un database comple
 ```bash
 # Connettiti al server
 ssh debian@79.137.73.184
+# Password: Temporanea2010!
 
 # Aggiorna sistema
 sudo apt update && sudo apt upgrade -y

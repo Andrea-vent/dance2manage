@@ -264,16 +264,19 @@ app.config['TOASTR_POSITION_CLASS'] = 'toast-top-right'
 # Context processor per rendere settings disponibili in tutti i template
 @app.context_processor
 def inject_settings():
+    from datetime import datetime
     try:
         settings = Settings.get_settings()
         return dict(
             global_settings=settings,
-            email_configured=settings.mail_configured if settings else False
+            email_configured=settings.mail_configured if settings else False,
+            now=datetime.now
         )
     except Exception:
         return dict(
             global_settings=None,
-            email_configured=False
+            email_configured=False,
+            now=datetime.now
         )
 
 # Filtro Jinja2 per formattazione valuta italiana
@@ -680,6 +683,11 @@ def nuovo_cliente():
             telefono_padre=request.form.get('telefono_padre', '') or None,
             attivo=bool(request.form.get('attivo'))
         )
+
+        # Gestione corsi associati
+        corsi_ids = request.form.getlist('corsi')
+        cliente.corsi = [Corso.query.get(int(cid)) for cid in corsi_ids]
+
         db.session.add(cliente)
         db.session.commit()
         flash('Cliente creato con successo!', 'success')
