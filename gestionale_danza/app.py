@@ -1035,13 +1035,67 @@ def pagamenti():
         sort_column = Pagamento.data_creazione.desc() if sort_order == 'desc' else Pagamento.data_creazione.asc()
         query = query.order_by(sort_column)
     
+    # PRIMA della paginazione, calcola i totali su TUTTI i record filtrati
+    # Questi totali devono riflettere TUTTI i pagamenti che soddisfano i filtri,
+    # non solo quelli della pagina corrente
+
+    # Clona la query base per calcolare i totali (senza ordinamento che non serve per le somme)
+    query_for_totals = Pagamento.query.join(Cliente).join(Corso)
+
+    # Applica gli stessi filtri della query principale
+    if mese:
+        query_for_totals = query_for_totals.filter(Pagamento.mese == mese)
+    if anno:
+        query_for_totals = query_for_totals.filter(Pagamento.anno == anno)
+    if giorno and mese and anno:
+        from datetime import date
+        try:
+            data_specifica_calc = date(anno, mese, giorno)
+            query_for_totals = query_for_totals.filter(db.func.date(Pagamento.data_pagamento) == data_specifica_calc)
+        except (ValueError, TypeError):
+            pass
+    if cliente_id:
+        query_for_totals = query_for_totals.filter(Pagamento.cliente_id == cliente_id)
+    if corso_id:
+        query_for_totals = query_for_totals.filter(Pagamento.corso_id == corso_id)
+    if search:
+        query_for_totals = query_for_totals.filter(
+            (Cliente.nome.contains(search)) |
+            (Cliente.cognome.contains(search)) |
+            (Corso.nome.contains(search)) |
+            (Pagamento.metodo_pagamento.contains(search)) |
+            (Pagamento.note.contains(search))
+        )
+    if stato == 'pagati':
+        query_for_totals = query_for_totals.filter(Pagamento.pagato == True)
+    elif stato == 'non_pagati':
+        query_for_totals = query_for_totals.filter(Pagamento.pagato == False)
+
+    # Calcola i totali
+    # Totale incassato (pagamenti pagati) - se già filtrati per stato, usa query diretta
+    if stato == 'pagati':
+        totale_incassato = query_for_totals.with_entities(db.func.sum(Pagamento.importo)).scalar() or 0
+        totale_da_incassare = 0
+    elif stato == 'non_pagati':
+        totale_incassato = 0
+        totale_da_incassare = query_for_totals.with_entities(db.func.sum(Pagamento.importo)).scalar() or 0
+    else:
+        # Se nessun filtro stato, calcola separatamente
+        query_pagati = query_for_totals.filter(Pagamento.pagato == True)
+        query_non_pagati = query_for_totals.filter(Pagamento.pagato == False)
+        totale_incassato = query_pagati.with_entities(db.func.sum(Pagamento.importo)).scalar() or 0
+        totale_da_incassare = query_non_pagati.with_entities(db.func.sum(Pagamento.importo)).scalar() or 0
+
+    # Totale complessivo
+    totale_complessivo = query_for_totals.with_entities(db.func.sum(Pagamento.importo)).scalar() or 0
+
     # Paginazione
     pagamenti_paginated = query.paginate(
         page=page,
         per_page=per_page,
         error_out=False
     )
-    
+
     # Calcola il totale incassato per il giorno (solo pagamenti effettuati)
     totale_giornaliero = 0
     if giorno and mese and anno:
@@ -1060,10 +1114,10 @@ def pagamenti():
     clienti = Cliente.query.filter_by(attivo=True).order_by(Cliente.cognome, Cliente.nome).all()
     corsi = Corso.query.order_by(Corso.nome).all()
     
-    return render_template('pagamenti.html', 
+    return render_template('pagamenti.html',
                          pagamenti=pagamenti_paginated.items,
                          pagamenti_paginated=pagamenti_paginated,
-                         clienti=clienti, 
+                         clienti=clienti,
                          corsi=corsi,
                          mese_filtro=mese,
                          anno_filtro=anno,
@@ -1076,7 +1130,10 @@ def pagamenti():
                          stato=stato,
                          sort_by=sort_by,
                          sort_order=sort_order,
-                         per_page=per_page)
+                         per_page=per_page,
+                         totale_incassato=totale_incassato,
+                         totale_da_incassare=totale_da_incassare,
+                         totale_complessivo=totale_complessivo)
 
 @app.route('/pagamenti/nuovo', methods=['GET', 'POST'])
 @login_required
