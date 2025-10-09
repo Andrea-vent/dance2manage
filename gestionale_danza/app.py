@@ -1802,7 +1802,21 @@ def esporta_report_excel():
             }])
             riepilogo_data.to_excel(writer, sheet_name='Riepilogo', index=False)
             
-            # Sheet 2: Report per Corso
+            # Sheet 2: Riepilogo Corsi (panoramica compatta)
+            if report_corsi:
+                corsi_riepilogo = []
+                for report in report_corsi:
+                    corsi_riepilogo.append({
+                        'Corso': report.corso.nome,
+                        'Insegnante': report.insegnante.nome_completo,
+                        'Numero Iscritti': report.corso.numero_iscritti,
+                        'Incasso': report.incasso_corso
+                    })
+
+                corsi_riepilogo_df = pd.DataFrame(corsi_riepilogo)
+                corsi_riepilogo_df.to_excel(writer, sheet_name='Riepilogo Corsi', index=False)
+
+            # Sheet 3: Report Dettagliato per Corso
             if report_corsi:
                 corsi_data = []
                 for report in report_corsi:
@@ -1818,11 +1832,11 @@ def esporta_report_excel():
                         'Compenso': report.compenso_insegnante,
                         'Utile Corso': report.utile_corso
                     })
-                
+
                 corsi_df = pd.DataFrame(corsi_data)
-                corsi_df.to_excel(writer, sheet_name='Report Corsi', index=False)
+                corsi_df.to_excel(writer, sheet_name='Dettaglio Corsi', index=False)
             
-            # Sheet 3: Report per Insegnante
+            # Sheet 4: Report per Insegnante
             if report_insegnanti:
                 insegnanti_data = []
                 for report in report_insegnanti:
