@@ -936,10 +936,15 @@ def elimina_insegnante(id):
 def pagamenti():
     # Parametri di filtro esistenti
     mese = request.args.get('mese', type=int)
-    anno = request.args.get('anno', type=int) 
+    anno = request.args.get('anno', type=int)
     giorno = request.args.get('giorno', type=int)  # Nuovo filtro per giorno
     data_specifica = request.args.get('data_specifica')  # HTML5 date input formato YYYY-MM-DD
-    
+
+    # Nuovo parametro: tipo di filtro data (periodo o data_pagamento)
+    tipo_filtro_data = request.args.get('tipo_filtro_data', 'periodo')  # 'periodo' o 'data_pagamento'
+    if tipo_filtro_data not in ['periodo', 'data_pagamento']:
+        tipo_filtro_data = 'periodo'
+
     # Se viene fornita data_specifica, sovrascrive giorno/mese/anno
     if data_specifica:
         try:
@@ -952,7 +957,8 @@ def pagamenti():
             data_specifica = None
     cliente_id = request.args.get('cliente_id', type=int)
     corso_id = request.args.get('corso_id', type=int)
-    
+    metodo_pagamento = request.args.get('metodo_pagamento', '')
+
     # Nuovi parametri per ricerca, ordinamento e paginazione
     search = request.args.get('search', '')
     stato = request.args.get('stato', 'tutti')  # tutti, pagati, non_pagati
@@ -974,25 +980,50 @@ def pagamenti():
     
     # Query base con join per ricerca
     query = Pagamento.query.join(Cliente).join(Corso)
-    
-    # Filtri esistenti
-    if mese:
-        query = query.filter(Pagamento.mese == mese)
-    if anno:
-        query = query.filter(Pagamento.anno == anno)
-    if giorno and mese and anno:
-        # Filtro per data specifica (giorno/mese/anno)
+
+    # Filtri temporali basati su tipo_filtro_data
+    if tipo_filtro_data == 'periodo':
+        # Filtra per periodo di competenza (mese/anno del pagamento)
+        if mese:
+            query = query.filter(Pagamento.mese == mese)
+        if anno:
+            query = query.filter(Pagamento.anno == anno)
+        if giorno and mese and anno:
+            # Per il filtro periodo con giorno specifico, non ha molto senso
+            # ma manteniamo compatibilità: filtra per data_pagamento
+            from datetime import date
+            try:
+                data_specifica_obj = date(anno, mese, giorno)
+                query = query.filter(db.func.date(Pagamento.data_pagamento) == data_specifica_obj)
+            except (ValueError, TypeError):
+                pass
+    elif tipo_filtro_data == 'data_pagamento':
+        # Filtra per data effettiva di pagamento
         from datetime import date
-        try:
-            data_specifica = date(anno, mese, giorno)
-            query = query.filter(db.func.date(Pagamento.data_pagamento) == data_specifica)
-        except (ValueError, TypeError):
-            pass  # Ignora date non valide
+        if giorno and mese and anno:
+            # Filtro per giorno specifico
+            try:
+                data_specifica_obj = date(anno, mese, giorno)
+                query = query.filter(db.func.date(Pagamento.data_pagamento) == data_specifica_obj)
+            except (ValueError, TypeError):
+                pass
+        elif mese and anno:
+            # Filtro per mese/anno di pagamento
+            query = query.filter(
+                db.extract('month', Pagamento.data_pagamento) == mese,
+                db.extract('year', Pagamento.data_pagamento) == anno
+            )
+        elif anno:
+            # Filtro solo per anno di pagamento
+            query = query.filter(db.extract('year', Pagamento.data_pagamento) == anno)
+
     if cliente_id:
         query = query.filter(Pagamento.cliente_id == cliente_id)
     if corso_id:
         query = query.filter(Pagamento.corso_id == corso_id)
-    
+    if metodo_pagamento:
+        query = query.filter(Pagamento.metodo_pagamento == metodo_pagamento)
+
     # Ricerca live
     if search:
         query = query.filter(
@@ -1042,22 +1073,43 @@ def pagamenti():
     # Clona la query base per calcolare i totali (senza ordinamento che non serve per le somme)
     query_for_totals = Pagamento.query.join(Cliente).join(Corso)
 
-    # Applica gli stessi filtri della query principale
-    if mese:
-        query_for_totals = query_for_totals.filter(Pagamento.mese == mese)
-    if anno:
-        query_for_totals = query_for_totals.filter(Pagamento.anno == anno)
-    if giorno and mese and anno:
+    # Applica gli stessi filtri temporali della query principale
+    if tipo_filtro_data == 'periodo':
+        # Filtra per periodo di competenza
+        if mese:
+            query_for_totals = query_for_totals.filter(Pagamento.mese == mese)
+        if anno:
+            query_for_totals = query_for_totals.filter(Pagamento.anno == anno)
+        if giorno and mese and anno:
+            from datetime import date
+            try:
+                data_specifica_calc = date(anno, mese, giorno)
+                query_for_totals = query_for_totals.filter(db.func.date(Pagamento.data_pagamento) == data_specifica_calc)
+            except (ValueError, TypeError):
+                pass
+    elif tipo_filtro_data == 'data_pagamento':
+        # Filtra per data effettiva di pagamento
         from datetime import date
-        try:
-            data_specifica_calc = date(anno, mese, giorno)
-            query_for_totals = query_for_totals.filter(db.func.date(Pagamento.data_pagamento) == data_specifica_calc)
-        except (ValueError, TypeError):
-            pass
+        if giorno and mese and anno:
+            try:
+                data_specifica_calc = date(anno, mese, giorno)
+                query_for_totals = query_for_totals.filter(db.func.date(Pagamento.data_pagamento) == data_specifica_calc)
+            except (ValueError, TypeError):
+                pass
+        elif mese and anno:
+            query_for_totals = query_for_totals.filter(
+                db.extract('month', Pagamento.data_pagamento) == mese,
+                db.extract('year', Pagamento.data_pagamento) == anno
+            )
+        elif anno:
+            query_for_totals = query_for_totals.filter(db.extract('year', Pagamento.data_pagamento) == anno)
+
     if cliente_id:
         query_for_totals = query_for_totals.filter(Pagamento.cliente_id == cliente_id)
     if corso_id:
         query_for_totals = query_for_totals.filter(Pagamento.corso_id == corso_id)
+    if metodo_pagamento:
+        query_for_totals = query_for_totals.filter(Pagamento.metodo_pagamento == metodo_pagamento)
     if search:
         query_for_totals = query_for_totals.filter(
             (Cliente.nome.contains(search)) |
@@ -1126,8 +1178,10 @@ def pagamenti():
                          totale_giornaliero=totale_giornaliero,
                          cliente_filtro=cliente_id,
                          corso_filtro=corso_id,
+                         metodo_pagamento_filtro=metodo_pagamento,
                          search=search,
                          stato=stato,
+                         tipo_filtro_data=tipo_filtro_data,
                          sort_by=sort_by,
                          sort_order=sort_order,
                          per_page=per_page,
@@ -1848,9 +1902,26 @@ def esporta_report_excel():
                         'Percentuale Media': report.percentuale_media,
                         'Compenso Totale': report.compenso_totale
                     })
-                
+
                 insegnanti_df = pd.DataFrame(insegnanti_data)
                 insegnanti_df.to_excel(writer, sheet_name='Compensi Insegnanti', index=False)
+
+            # Sheet 5: Elenco Allievi per Corso
+            corsi_con_iscritti = Corso.query.all()
+            allievi_data = []
+            for corso in corsi_con_iscritti:
+                for cliente in corso.clienti:
+                    allievi_data.append({
+                        'Corso': corso.nome,
+                        'Nome': cliente.nome,
+                        'Cognome': cliente.cognome
+                    })
+
+            if allievi_data:
+                allievi_df = pd.DataFrame(allievi_data)
+                # Ordina per corso e poi per cognome
+                allievi_df = allievi_df.sort_values(['Corso', 'Cognome', 'Nome'])
+                allievi_df.to_excel(writer, sheet_name='Allievi per Corso', index=False)
         
         excel_buffer.seek(0)
         

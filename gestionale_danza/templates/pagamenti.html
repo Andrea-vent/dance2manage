@@ -44,13 +44,13 @@
                         </select>
                     </div>
                     
-                    <!-- Seconda riga: Filtri esistenti -->
+                    <!-- Seconda riga: Filtri temporali -->
                     <div class="col-md-3">
-                        <label for="data_specifica" class="form-label">Data Specifica</label>
-                        <input type="date" class="form-control" id="data_specifica" name="data_specifica" 
-                               value="{% if data_specifica %}{{ data_specifica }}{% elif giorno_filtro and mese_filtro and anno_filtro %}{{ '%04d-%02d-%02d'|format(anno_filtro, mese_filtro, giorno_filtro) }}{% endif %}"
-                               onchange="this.form.submit()">
-                        <small class="form-text text-muted">Filtra pagamenti per data specifica</small>
+                        <label for="tipo_filtro_data" class="form-label">Tipo Filtro Data</label>
+                        <select class="form-select" id="tipo_filtro_data" name="tipo_filtro_data">
+                            <option value="periodo" {% if tipo_filtro_data == 'periodo' %}selected{% endif %}>Periodo (Competenza)</option>
+                            <option value="data_pagamento" {% if tipo_filtro_data == 'data_pagamento' %}selected{% endif %}>Data di Pagamento</option>
+                        </select>
                     </div>
                     <div class="col-md-2">
                         <label for="mese" class="form-label">Mese</label>
@@ -73,6 +73,20 @@
                             {% endfor %}
                         </select>
                     </div>
+                    <div class="col-md-5">
+                        <label for="data_specifica" class="form-label">
+                            <i class="bi bi-calendar-event me-1"></i>Data Specifica
+                            <small class="text-muted">(opzionale - sovrascrive Mese/Anno)</small>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+                            <input type="text" class="form-control" id="data_specifica" name="data_specifica"
+                                   value="{% if data_specifica %}{{ data_specifica }}{% elif giorno_filtro and mese_filtro and anno_filtro %}{{ '%04d-%02d-%02d'|format(anno_filtro, mese_filtro, giorno_filtro) }}{% endif %}"
+                                   placeholder="Seleziona una data...">
+                        </div>
+                    </div>
+
+                    <!-- Terza riga: Cliente, Corso, Metodo Pagamento -->
                     <div class="col-md-3">
                         <label for="cliente_id" class="form-label">Cliente</label>
                         <select class="form-select" id="cliente_id" name="cliente_id">
@@ -95,9 +109,19 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-2">
+                    <div class="col-md-3">
+                        <label for="metodo_pagamento" class="form-label">Metodo Pagamento</label>
+                        <select class="form-select" id="metodo_pagamento" name="metodo_pagamento">
+                            <option value="">Tutti</option>
+                            <option value="Contanti" {% if metodo_pagamento_filtro == 'Contanti' %}selected{% endif %}>Contanti</option>
+                            <option value="Bonifico" {% if metodo_pagamento_filtro == 'Bonifico' %}selected{% endif %}>Bonifico</option>
+                            <option value="Bancomat" {% if metodo_pagamento_filtro == 'Bancomat' %}selected{% endif %}>Bancomat</option>
+                            <option value="Carta di credito" {% if metodo_pagamento_filtro == 'Carta di credito' %}selected{% endif %}>Carta di credito</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
                         <label class="form-label">&nbsp;</label>
-                        <div class="d-grid">
+                        <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-outline-primary">
                                 <i class="bi bi-search me-1"></i>Filtra
                             </button>
@@ -488,6 +512,24 @@
 </style>
 
 <script>
+// === INIZIALIZZAZIONE FLATPICKR PER DATA SPECIFICA ===
+document.addEventListener('DOMContentLoaded', function() {
+    const dataSpecificaInput = document.getElementById('data_specifica');
+    if (dataSpecificaInput) {
+        flatpickr(dataSpecificaInput, {
+            locale: 'it',
+            dateFormat: 'Y-m-d',
+            altInput: true,
+            altFormat: 'd/m/Y',
+            allowInput: true,
+            onChange: function(selectedDates, dateStr, instance) {
+                // Auto-submit quando viene selezionata una data
+                document.getElementById('searchForm').submit();
+            }
+        });
+    }
+});
+
 function confermaEliminazione(pagamentoInfo, url) {
     document.getElementById('pagamentoInfo').textContent = pagamentoInfo;
     document.getElementById('deleteForm').action = url;
@@ -524,7 +566,7 @@ if (searchInput) {
 }
 
 // Auto-submit quando cambiano i filtri
-['stato', 'mese', 'anno', 'cliente_id', 'corso_id'].forEach(id => {
+['stato', 'mese', 'anno', 'tipo_filtro_data', 'cliente_id', 'corso_id', 'metodo_pagamento'].forEach(id => {
     const element = document.getElementById(id);
     if (element) {
         element.addEventListener('change', function() {
